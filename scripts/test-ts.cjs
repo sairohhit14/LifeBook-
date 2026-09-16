@@ -4,6 +4,7 @@
  *   2. test/db-race-check.ts — cross-process db.json write-race self-check
  *   3. test/supabase-sync-check.ts — Supabase vault round-trip self-check
  *   4. test/server-routes-check.ts — security-sensitive route unit checks
+ *   5. test/design-tokens-check.ts — UI design-system regression guard
  *
  * Uses npx so no locally-installed binary paths are assumed.
  */
@@ -16,6 +17,7 @@ for (const [name, cmd, args] of [
   ["db-race-check", "npx", ["tsx", "test/db-race-check.ts"]],
   ["supabase-sync-check", "npx", ["tsx", "test/supabase-sync-check.ts"]],
   ["server-routes-check", "npx", ["tsx", "test/server-routes-check.ts"]],
+  ["design-tokens-check", "npx", ["tsx", "test/design-tokens-check.ts"]],
 ]) {
   console.log(`\n=== ${name} ===`);
   const res = spawnSync(cmd, args, { stdio: "inherit", shell: true });

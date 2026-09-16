@@ -159,7 +159,7 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
         setSelectedMusicTrack(result.musicTrack);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to initiate Google Flow.");
+      setError(err.message || "We couldn't start your film. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -212,7 +212,7 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
       setCurrentSceneIndex(0);
       setSceneProgress(0);
     } catch (err: any) {
-      setError(err.message || "Google Flow video compile failed.");
+      setError(err.message || "We couldn't create your film right now. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -268,26 +268,26 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
       <div id="google-flow-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#E5E5E1]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="bg-amber-400 text-[#1A1A1A] text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-none font-mono">
+            <span className="bg-[#C9A66B] text-[#1A1A1A] text-[9px] font-medium uppercase tracking-[0.15em] px-2 py-0.5 rounded-[16px] font-mono">
               Powered by Google Flow AI
             </span>
-            <span className="bg-[#1A1A1A] text-white text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-none font-mono animate-pulse">
+            <span className="bg-[#315C4A] text-white text-[9px] font-medium uppercase tracking-[0.15em] px-2 py-0.5 rounded-[16px] font-mono animate-pulse">
               Cinema Studio v3.5
             </span>
           </div>
-          <h2 className="text-3xl font-serif italic text-[#1A1A1A] flex items-center gap-2 mt-1.5" style={{ fontFamily: "Georgia, serif" }}>
+          <h2 className="text-3xl font-serif italic text-[#1A1A1A] flex items-center gap-2 mt-1.5">
             <Video className="w-7 h-7 text-[#1A1A1A]" />
             <span>Google Flow Legacy Tribute Video</span>
           </h2>
-          <p className="text-[#1A1A1A]/70 text-xs">
+          <p className="text-[#454A46] text-xs">
             Synthesize your chronological memories, logs, photos, and milestones into a seamless, high-fidelity widescreen tribute movie.
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-none text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-700 flex-shrink-0" />
+        <div className="p-3 bg-[#F9EFEB] border border-[#E8CDC4] text-[#B4543E] rounded-[16px] text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-[#B4543E] flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -301,15 +301,15 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
           {/* Main Cinema Screen */}
           <div 
             id="cinema-canvas" 
-            className={`relative bg-black aspect-video overflow-hidden border border-[#1A1A1A] shadow-2xl flex items-center justify-center group ${
+            className={`relative bg-black aspect-video overflow-hidden border border-[#315C4A] shadow-2xl flex items-center justify-center group ${
               isFullscreen ? "fixed inset-0 z-50 w-screen h-screen aspect-auto" : "w-full"
             }`}
           >
             {loading ? (
               <div className="text-center text-white space-y-4">
-                <Loader className="w-12 h-12 animate-spin text-amber-400 mx-auto" />
+                <Loader className="w-12 h-12 animate-spin text-[#C9A66B] mx-auto" />
                 <div className="space-y-1">
-                  <p className="text-sm font-bold uppercase tracking-widest text-amber-300">Rendering Widescreen Layers...</p>
+                  <p className="text-sm font-medium uppercase tracking-[0.15em] text-[#C9A66B]">Rendering Widescreen Layers...</p>
                   <p className="text-[10px] text-white/50 font-mono">Analyzing memory logs, cross-referencing timeline files &amp; scripting camera cues</p>
                 </div>
               </div>
@@ -342,20 +342,20 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
 
                       {/* Top left scene indicator */}
                       <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1 text-[9px] text-white font-mono uppercase tracking-widest font-bold">
-                        <Film className="w-3.5 h-3.5 text-amber-400" />
+                        <Film className="w-3.5 h-3.5 text-[#C9A66B]" />
                         <span>Scene {idx + 1} of {script.scenes.length}: {scene.title}</span>
                       </div>
 
                       {/* Simulated narration subtitles overlay at the bottom */}
                       <div className="absolute bottom-12 left-8 right-8 text-center space-y-3 z-10">
-                        <div className="max-w-2xl mx-auto bg-black/50 backdrop-blur-sm p-4 border border-white/10 rounded-none">
+                        <div className="max-w-2xl mx-auto bg-black/50 backdrop-blur-sm p-4 border border-white/10 rounded-[16px]">
                           {/* Animated Voiceover Caption */}
-                          <p className="text-white text-sm md:text-base font-serif italic leading-relaxed tracking-wide text-center" style={{ fontFamily: "Georgia, serif" }}>
+                          <p className="text-white text-sm md:text-base font-serif italic leading-relaxed tracking-wide text-center">
                             &ldquo;{scene.narration}&rdquo;
                           </p>
                         </div>
                         {/* Camera angle & director visual notes indicator */}
-                        <span className="text-[9px] uppercase tracking-widest font-bold text-amber-300 block font-mono">
+                        <span className="text-[9px] uppercase tracking-widest font-bold text-[#C9A66B] block font-mono">
                           🎬 Visual: {scene.visualCue}
                         </span>
                       </div>
@@ -365,8 +365,8 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
 
                 {/* Overlaid watermark / screen title */}
                 <div className="absolute top-6 right-6 text-right">
-                  <h4 className="text-white/80 font-serif italic text-xs tracking-tight" style={{ fontFamily: "Georgia, serif" }}>{script.title}</h4>
-                  <span className="text-[8px] text-amber-400 font-mono tracking-widest uppercase font-bold">Google Flow Cinema</span>
+                  <h4 className="text-white/80 font-serif italic text-xs tracking-tight">{script.title}</h4>
+                  <span className="text-[8px] text-[#C9A66B] font-mono tracking-widest uppercase font-medium">Google Flow Cinema</span>
                 </div>
 
                 {/* Audio voiceover waves simulation */}
@@ -375,7 +375,7 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                     {equalizerBars.map((barHeight, i) => (
                       <div 
                         key={i} 
-                        className="w-1 bg-amber-400 rounded-t-sm transition-all duration-150"
+                        className="w-1 bg-[#C9A66B] rounded-t-sm transition-all duration-150"
                         style={{ height: `${barHeight}px` }}
                       ></div>
                     ))}
@@ -392,22 +392,22 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
 
           {/* Widescreen Media Player Controls Dashboard */}
           {script && script.scenes.length > 0 && (
-            <div id="player-dashboard" className="bg-[#1A1A1A] text-white p-5 rounded-none space-y-4">
+            <div id="player-dashboard" className="bg-[#315C4A] text-white p-5 rounded-[16px] space-y-4">
               
               {/* Progress bars & timers */}
               <div className="space-y-2">
                 <div className="flex justify-between text-[10px] font-mono uppercase tracking-wider text-white/60 font-bold">
                   <span>Playback Time progress</span>
-                  <span className="text-amber-400">
+                  <span className="text-[#C9A66B]">
                     Scene {currentSceneIndex + 1} Progress: {Math.floor(sceneProgress)}%
                   </span>
                 </div>
                 
                 {/* Outer Progress bar */}
-                <div className="w-full h-1.5 bg-white/10 rounded-none overflow-hidden relative cursor-pointer">
+                <div className="w-full h-1.5 bg-white/10 rounded-[16px] overflow-hidden relative cursor-pointer">
                   {/* Total overall video progress marker */}
                   <div 
-                    className="h-full bg-amber-400 transition-all duration-100 ease-out" 
+                    className="h-full bg-[#C9A66B] transition-all duration-100 ease-out" 
                     style={{ 
                       width: `${((currentSceneIndex + (sceneProgress / 100)) / script.scenes.length) * 100}%` 
                     }}
@@ -420,7 +420,7 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={togglePlay}
-                    className="p-3 bg-white hover:bg-amber-400 text-[#1A1A1A] rounded-full transition-all cursor-pointer flex items-center justify-center shadow-lg"
+                    className="p-3 bg-white hover:bg-[#C9A66B] text-[#1A1A1A] rounded-full transition-all cursor-pointer flex items-center justify-center shadow-lg"
                     title={isPlaying ? "Pause Video" : "Play Video"}
                   >
                     {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current pl-0.5" />}
@@ -443,9 +443,9 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                           setCurrentSceneIndex(i);
                           setSceneProgress(0);
                         }}
-                        className={`px-2 py-0.5 text-[9px] font-mono uppercase font-bold transition-all cursor-pointer ${
+                        className={`px-2 py-0.5 text-[10px] font-mono uppercase font-medium transition-all cursor-pointer ${
                           currentSceneIndex === i 
-                            ? "bg-amber-400 text-[#1A1A1A]" 
+                            ? "bg-[#C9A66B] text-[#1A1A1A]" 
                             : "text-white/60 hover:bg-white/10"
                         }`}
                       >
@@ -458,27 +458,27 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                 {/* Backing Track selector */}
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                   <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 border border-white/10">
-                    <Music className="w-3.5 h-3.5 text-amber-400" />
+                    <Music className="w-3.5 h-3.5 text-[#C9A66B]" />
                     <select
                       value={selectedMusicTrack}
                       onChange={(e) => setSelectedMusicTrack(e.target.value)}
-                      className="bg-transparent text-white text-[10px] uppercase font-bold tracking-wider font-mono border-none focus:outline-none cursor-pointer"
+                      className="bg-transparent text-white text-[10px] uppercase font-medium tracking-wider font-mono border-none focus:outline-none cursor-pointer"
                     >
-                      <option value="Acoustic Melancholy" className="bg-[#1A1A1A]">🎻 Acoustic Melancholy</option>
-                      <option value="Grand Orchestral Strings" className="bg-[#1A1A1A]">🎷 Grand Orchestral Strings</option>
-                      <option value="Reflective Ambient Piano" className="bg-[#1A1A1A]">🎹 Reflective Ambient Piano</option>
-                      <option value="Cinematic Deep Flow" className="bg-[#1A1A1A]">🌌 Cinematic Deep Flow</option>
-                      <option value="Warm Heritage Folk" className="bg-[#1A1A1A]">🌾 Warm Heritage Folk</option>
+                      <option value="Acoustic Melancholy" className="bg-[#315C4A]">🎻 Acoustic Melancholy</option>
+                      <option value="Grand Orchestral Strings" className="bg-[#315C4A]">🎷 Grand Orchestral Strings</option>
+                      <option value="Reflective Ambient Piano" className="bg-[#315C4A]">🎹 Reflective Ambient Piano</option>
+                      <option value="Cinematic Deep Flow" className="bg-[#315C4A]">🌌 Cinematic Deep Flow</option>
+                      <option value="Warm Heritage Folk" className="bg-[#315C4A]">🌾 Warm Heritage Folk</option>
                     </select>
                   </div>
 
                   <button
                     onClick={handleShuffleMusic}
                     type="button"
-                    className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-none border border-white/10 text-[9px] font-bold font-mono uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-[16px] border border-white/10 text-[10px] font-medium font-mono uppercase tracking-wider flex items-center gap-1 cursor-pointer"
                     title="Pick random music suited for this video"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                    <RefreshCw className="w-3.5 h-3.5 text-[#C9A66B]" />
                     <span>Shuffle Match</span>
                   </button>
                 </div>
@@ -489,9 +489,9 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                     <button
                       key={speed}
                       onClick={() => setPlaybackSpeed(speed)}
-                      className={`w-8 py-1 text-[9px] font-bold font-mono uppercase transition-all rounded-none border cursor-pointer ${
+                      className={`w-8 py-1 text-[10px] font-medium font-mono uppercase transition-all rounded-[16px] border cursor-pointer ${
                         playbackSpeed === speed 
-                          ? "bg-amber-400 border-amber-400 text-[#1A1A1A]" 
+                          ? "bg-[#C9A66B] border-[#C9A66B] text-[#1A1A1A]" 
                           : "border-white/20 text-white/70 hover:border-white"
                       }`}
                     >
@@ -506,7 +506,7 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                 <div className="flex items-center gap-3 bg-white/5 p-2 border border-white/10">
                   <button
                     onClick={() => setIsMuted(!isMuted)}
-                    className="text-amber-400 hover:text-amber-300 focus:outline-none transition-colors"
+                    className="text-[#C9A66B] hover:text-[#C9A66B] focus:outline-none transition-colors"
                     title={isMuted ? "Unmute Music" : "Mute Music"}
                   >
                     <Volume2 className={`w-4 h-4 ${isMuted ? "opacity-40" : ""}`} />
@@ -521,9 +521,9 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                         step="0.05" 
                         value={musicVolume} 
                         onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
-                        className="w-20 accent-amber-400 h-1 bg-white/20 cursor-pointer" 
+                        className="w-20 accent-[#C9A66B] h-1 bg-white/20 cursor-pointer" 
                       />
-                      <span className="text-[9px] font-mono font-bold text-amber-400 w-6">
+                      <span className="text-[10px] font-mono text-[#C9A66B] w-6">
                         {isMuted ? "0%" : `${Math.round(musicVolume * 100)}%`}
                       </span>
                     </div>
@@ -541,7 +541,7 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                       a.download = `${script.title.replace(/\s+/g, "_")}_script.json`;
                       a.click();
                     }}
-                    className="px-3 py-1.5 bg-white/10 hover:bg-white/25 transition-all text-white text-[10px] font-bold uppercase tracking-wider rounded-none cursor-pointer flex items-center gap-1"
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/25 transition-all text-white text-[10px] font-medium uppercase tracking-[0.12em] rounded-[16px] cursor-pointer flex items-center gap-1"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download Script</span>
@@ -550,7 +550,7 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                     onClick={() => {
                       alert(`Successfully generated secure movie sharing link for ${script.title}! Your descendants will receive an email containing access permissions.`);
                     }}
-                    className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 transition-all text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider rounded-none cursor-pointer flex items-center gap-1"
+                    className="px-3 py-1.5 bg-[#C9A66B] hover:bg-[#C9A66B] transition-all text-[#1A1A1A] text-[10px] font-medium uppercase tracking-[0.12em] rounded-[16px] cursor-pointer flex items-center gap-1"
                   >
                     <Share2 className="w-3.5 h-3.5" />
                     <span>Share Tribute Film</span>
@@ -563,19 +563,19 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
 
         {/* AI Cinema Settings Panel (Right 1 column) */}
         <div className="space-y-6">
-          <div className="p-6 rounded-none bg-[#F1EFEC] border border-[#E5E5E1] space-y-6">
+          <div className="p-6 rounded-[16px] bg-[#F1EFEC] border border-[#E5E5E1] space-y-6">
             <div className="flex items-center gap-2 text-[#1A1A1A]">
               <Sparkles className="w-5 h-5 text-[#1A1A1A]" />
-              <h3 className="font-serif italic text-xl text-[#1A1A1A]" style={{ fontFamily: "Georgia, serif" }}>Google Flow Director</h3>
+              <h3 className="font-serif italic text-xl text-[#1A1A1A]">Google Flow Director</h3>
             </div>
 
-            <p className="text-xs text-[#1A1A1A]/80 leading-relaxed font-sans">
+            <p className="text-xs text-[#454A46] leading-relaxed font-sans">
               Google Flow aggregates memories, oral testimonies, family connections, and milestone dates from your digital ledger, creating high-impact storytelling sequences tailored to your preferences.
             </p>
 
             <form onSubmit={handleGenerateVideo} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Cinematic Film Tone</label>
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Cinematic Film Tone</label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     "Heartwarming & Reflective",
@@ -587,43 +587,43 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
                       key={tone}
                       type="button"
                       onClick={() => setTonePreset(tone)}
-                      className={`p-2.5 text-[9px] font-bold uppercase rounded-none border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      className={`p-2.5 text-[10px] font-medium uppercase rounded-[16px] border text-left transition-all cursor-pointer flex flex-col justify-between ${
                         tonePreset === tone 
-                          ? "bg-[#1A1A1A] border-[#1A1A1A] text-white" 
-                          : "bg-white border-[#E5E5E1] text-[#1A1A1A]/70 hover:border-[#1A1A1A]"
+                          ? "bg-[#315C4A] border-[#315C4A] text-white" 
+                          : "bg-white border-[#E5E5E1] text-[#454A46] hover:border-[#315C4A]"
                       }`}
                     >
                       <span>{tone.split(" & ")[0]}</span>
-                      <span className={`text-[8px] font-medium block mt-0.5 ${tonePreset === tone ? "text-amber-300" : "text-[#1A1A1A]/50"}`}>{tone.split(" & ")[1]}</span>
+                      <span className={`text-[8px] font-medium block mt-0.5 ${tonePreset === tone ? "text-[#C9A66B]" : "text-[#8A8F8B]"}`}>{tone.split(" & ")[1]}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Director Custom Instructions</label>
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Director Custom Instructions</label>
                 <textarea
                   rows={4}
                   placeholder="E.g. Focus heavy on the childhood era memories, use poetic language, highlight grandfather's values on kindness."
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A] leading-relaxed font-serif"
+                  className="w-full px-4 py-2 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A] leading-relaxed font-serif"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading || guestMode}
-                className="w-full py-3 bg-[#1A1A1A] hover:bg-[#1A1A1A]/95 text-white rounded-none text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-55"
+                className="w-full py-3 bg-[#315C4A] hover:bg-[#27493A] text-white rounded-[16px] text-xs font-medium uppercase tracking-[0.15em] flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-55"
               >
                 {loading ? (
                   <>
-                    <Loader className="w-4 h-4 animate-spin text-amber-300" />
+                    <Loader className="w-4 h-4 animate-spin text-[#C9A66B]" />
                     <span>Rendering Widescreen Layers...</span>
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="w-4 h-4 text-amber-400 animate-spin-slow" />
+                    <RefreshCw className="w-4 h-4 text-[#C9A66B] animate-spin-slow" />
                     <span>Re-compile Legacy Film</span>
                   </>
                 )}
@@ -633,25 +633,25 @@ export default function GoogleFlowVideo({ guestMode }: GoogleFlowVideoProps) {
 
           {/* Interactive Screenplays Index */}
           {script && script.scenes.length > 0 && (
-            <div className="p-6 bg-white border border-[#E5E5E1] rounded-none space-y-4">
-              <h4 className="font-serif italic text-base font-bold text-[#1A1A1A]" style={{ fontFamily: "Georgia, serif" }}>📜 Film Storyboard Script</h4>
+            <div className="p-6 bg-white border border-[#E5E5E1] rounded-[16px] space-y-4">
+              <h4 className="font-serif italic text-base font-semibold text-[#1A1A1A]">📜 Film Storyboard Script</h4>
               <div className="space-y-3 divide-y divide-[#E5E5E1] max-h-60 overflow-y-auto pr-1">
                 {script.scenes.map((scene, index) => (
                   <div 
                     key={index} 
                     className={`pt-3 first:pt-0 text-xs cursor-pointer transition-colors p-2 ${
-                      currentSceneIndex === index ? "bg-amber-50/50 border-l-2 border-amber-400" : "hover:bg-[#F1EFEC]/40"
+                      currentSceneIndex === index ? "bg-[#F7F0E0]/50 border-l-2 border-[#C9A66B]" : "hover:bg-[#F1EFEC]/40"
                     }`}
                     onClick={() => {
                       setCurrentSceneIndex(index);
                       setSceneProgress(0);
                     }}
                   >
-                    <div className="flex justify-between font-bold text-[#1A1A1A]/60 font-mono text-[9px] uppercase">
+                    <div className="flex justify-between font-semibold text-[#1E2521]/60 font-mono text-[9px] uppercase">
                       <span>Scene {index + 1}</span>
                       <span>Duration: {scene.duration}s</span>
                     </div>
-                    <h5 className="font-bold text-[#1A1A1A] mt-1">{scene.title}</h5>
+                    <h5 className="font-semibold text-[#1E2521] mt-1">{scene.title}</h5>
                     <p className="text-[11px] text-[#1A1A1A]/75 mt-1 font-serif italic line-clamp-2 leading-relaxed">
                       &ldquo;{scene.narration}&rdquo;
                     </p>

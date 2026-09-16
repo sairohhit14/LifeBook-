@@ -26,3 +26,5 @@ hs_err_pid*.log
 # Local tooling artifacts
 venv/
 .npm-cache/
+# Browser QA artifacts
+test/screenshots/

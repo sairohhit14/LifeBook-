@@ -87,7 +87,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
       });
       setSuccess("Email delivery service credentials updated and secured!");
     } catch (err: any) {
-      setError(err.message || "Failed to update email delivery credentials");
+      setError(err.message || "We couldn't save your email settings. Please check the details and try again.");
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
       onProfileUpdated(updatedUser);
       setSuccess("Profile settings successfully updated!");
     } catch (err: any) {
-      setError(err.message || "Failed to update profile details");
+      setError(err.message || "We couldn't save your profile changes. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -122,7 +122,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
         onProfileUpdated({ ...user, legacyKey: result.legacyKey });
         setSuccess("Your secure Legacy Key has been regenerated successfully!");
       } catch (err: any) {
-        setError(err.message || "Failed to regenerate legacy key");
+        setError(err.message || "We couldn't create a new Legacy Key. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -180,7 +180,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
       const result = await api.uploadFile(file.name, base64Data, "image");
       setProfilePhoto(result.url);
     } catch (err: any) {
-      setError("Portrait upload failed: " + err.message);
+      setError("We couldn't upload that photo. " + err.message);
     } finally {
       setUploading(false);
     }
@@ -197,7 +197,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
       await api.deleteAccount();
       onLogout();
     } catch (err: any) {
-      setError("Failed to delete account: " + err.message);
+      setError("We couldn't delete your account. " + err.message);
     } finally {
       setLoading(false);
     }
@@ -207,15 +207,15 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
     <div id="settings-root" className="space-y-8 animate-fade-in font-sans text-[#1A1A1A]">
       <div className="pb-4 border-b border-[#E5E5E1] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-serif italic text-[#1A1A1A] tracking-tight flex items-center gap-2" style={{ fontFamily: "Georgia, serif" }}>
+          <h2 className="text-3xl font-serif italic text-[#1A1A1A] tracking-tight flex items-center gap-2">
             <Settings className="w-6 h-6 text-[#1A1A1A]" />
             <span>Profile &amp; Security Settings</span>
           </h2>
-          <p className="text-[#1A1A1A]/70 text-xs mt-1">Manage your personal legacy owner record, update passwords, and manage database persistence.</p>
+          <p className="text-[#454A46] text-xs mt-1">Manage your personal legacy owner record, update passwords, and manage database persistence.</p>
         </div>
         <button
           onClick={onLogout}
-          className="self-start sm:self-center px-4 py-2.5 bg-[#1A1A1A] hover:bg-[#1A1A1A]/90 text-white rounded-none text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+          className="self-start sm:self-center px-4 py-2.5 bg-[#315C4A] hover:bg-[#27493A] text-white rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
           <span>Sign Out of Account</span>
@@ -223,14 +223,14 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-none text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-700 flex-shrink-0" />
+        <div className="p-3 bg-[#F9EFEB] border border-[#E8CDC4] text-[#B4543E] rounded-[16px] text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-[#B4543E] flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] text-[#1A1A1A] rounded-none text-xs flex items-center gap-2 font-bold">
+        <div className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] text-[#1A1A1A] rounded-[16px] text-xs flex items-center gap-2 font-bold">
           <CheckCircle className="w-4 h-4 text-[#1A1A1A] flex-shrink-0" />
           <span>{success}</span>
         </div>
@@ -239,18 +239,18 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Profile Card */}
-        <div className="p-6 bg-white border border-[#E5E5E1] rounded-none space-y-6 shadow-sm">
+        <div className="p-6 bg-white border border-[#E5E5E1] rounded-[16px] space-y-6 shadow-sm">
           <div className="flex justify-between items-start">
-            <h3 className="font-serif italic text-lg text-[#1A1A1A]" style={{ fontFamily: "Georgia, serif" }}>Personal Legacy Record</h3>
+            <h3 className="font-serif italic text-lg text-[#1A1A1A]">Personal Legacy Record</h3>
             {isGuest && (
-              <span className="px-2 py-0.5 bg-[#F1EFEC] border border-[#1A1A1A]/10 text-[9px] font-bold uppercase tracking-wider text-[#1A1A1A]/60">
+              <span className="px-2 py-0.5 bg-[#F1EFEC] border border-[#315C4A]/10 text-[9px] font-medium uppercase tracking-[0.12em] text-[#454A46]">
                 View Only
               </span>
             )}
           </div>
 
           {isGuest && (
-            <div className="p-3 bg-[#F1EFEC] border border-[#1A1A1A]/10 text-[#1A1A1A]/70 text-[10px] font-medium leading-normal">
+            <div className="p-3 bg-[#F1EFEC] border border-[#315C4A]/10 text-[#454A46] text-[10px] font-medium leading-normal">
               You are signed in as a family guest. You can view the owner's profile info but are restricted from editing it.
             </div>
           )}
@@ -258,8 +258,8 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             
             {/* Avatar picker */}
-            <div className="flex items-center gap-4 p-4 bg-[#F1EFEC] border border-[#E5E5E1] rounded-none">
-              <div className="w-14 h-14 rounded-none bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-lg font-serif font-bold uppercase">
+            <div className="flex items-center gap-4 p-4 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px]">
+              <div className="w-14 h-14 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-lg font-serif font-medium uppercase">
                 {profilePhoto ? (
                   <img src={profilePhoto} alt={name} className="w-full h-full object-cover" />
                 ) : name[0]}
@@ -267,7 +267,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
 
               {!isGuest && (
                 <div>
-                  <label className="border border-[#E5E5E1] bg-white hover:bg-[#F1EFEC] px-3 py-1.5 rounded-none flex items-center gap-1 cursor-pointer text-[10px] font-bold text-[#1A1A1A] transition-colors uppercase tracking-wider">
+                  <label className="border border-[#E5E5E1] bg-white hover:bg-[#F1EFEC] px-3 py-1.5 rounded-[16px] flex items-center gap-1 cursor-pointer text-[10px] font-semibold text-[#1E2521] transition-colors uppercase tracking-wider">
                     <Upload className="w-3.5 h-3.5" />
                     <span>Update Portrait Photo</span>
                     <input
@@ -277,15 +277,15 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                       onChange={handlePortraitUpload}
                     />
                   </label>
-                  {uploading && <p className="text-[10px] text-[#1A1A1A]/60 mt-1 font-semibold animate-pulse">Uploading...</p>}
+                  {uploading && <p className="text-[10px] text-[#454A46] mt-1 font-semibold animate-pulse">Uploading...</p>}
                 </div>
               )}
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Full Name</label>
+              <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Full Name</label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#1A1A1A]/50">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
                   <UserIcon className="w-4 h-4" />
                 </span>
                 <input
@@ -294,15 +294,15 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                   disabled={isGuest}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A] disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A] disabled:opacity-70 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Email Address</label>
+              <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Email Address</label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#1A1A1A]/50">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
                   <Mail className="w-4 h-4" />
                 </span>
                 <input
@@ -311,16 +311,16 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                   disabled={isGuest}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A] disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A] disabled:opacity-70 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Date of Birth</label>
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Date of Birth</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#1A1A1A]/50">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
                     <Calendar className="w-4 h-4" />
                   </span>
                   <input
@@ -329,15 +329,15 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                     disabled={isGuest}
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A] disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A] disabled:opacity-70 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Phone</label>
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Phone</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#1A1A1A]/50">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
                     <Phone className="w-4 h-4" />
                   </span>
                   <input
@@ -345,7 +345,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                     disabled={isGuest}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A] disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A] disabled:opacity-70 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -355,7 +355,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 mt-2 bg-[#1A1A1A] hover:bg-[#1A1A1A]/90 text-white rounded-none text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all flex items-center justify-center gap-1"
+                className="w-full py-2.5 mt-2 bg-[#315C4A] hover:bg-[#27493A] text-white rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] cursor-pointer transition-all flex items-center justify-center gap-1"
               >
                 {loading ? <Loader className="w-4 h-4 animate-spin" /> : <span>Update Profile Record</span>}
               </button>
@@ -367,17 +367,17 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
         <div className="space-y-6">
           
           {/* Legacy Key card */}
-          <div className="p-6 bg-white border border-[#E5E5E1] rounded-none space-y-4 shadow-sm">
-            <h3 className="font-serif italic text-lg text-[#1A1A1A] flex items-center gap-1.5" style={{ fontFamily: "Georgia, serif" }}>
+          <div className="p-6 bg-white border border-[#E5E5E1] rounded-[16px] space-y-4 shadow-sm">
+            <h3 className="font-serif italic text-lg text-[#1A1A1A] flex items-center gap-1.5">
               <Key className="w-5 h-5 text-[#1A1A1A]" />
               <span>Secure Legacy Share Key</span>
             </h3>
-            <p className="text-xs text-[#1A1A1A]/70 leading-relaxed">
+            <p className="text-xs text-[#454A46] leading-relaxed">
               Your unique **Legacy Key** allows family members and heirs to securely view your uploaded memories, biography shelves, and public chronicles from the home screen in View-Only mode.
             </p>
 
-            <div className="p-4 bg-[#F1EFEC] border border-[#E5E5E1] rounded-none flex flex-col items-center justify-center gap-3">
-              <span className="text-[9px] uppercase tracking-wider font-bold text-[#1A1A1A]/60">Your Sharing Key</span>
+            <div className="p-4 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex flex-col items-center justify-center gap-3">
+              <span className="text-[9px] uppercase tracking-wider font-semibold text-[#1E2521]/60">Your Sharing Key</span>
               <div className="text-xl font-mono font-bold tracking-widest text-[#1A1A1A] select-all">
                 {legacyKey || "LB-XXXXXX"}
               </div>
@@ -386,7 +386,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                   type="button"
                   onClick={handleCopyKey}
                   disabled={!legacyKey}
-                  className="flex-1 py-2 border border-[#E5E5E1] hover:bg-white bg-[#F1EFEC] text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                  className="flex-1 py-2 border border-[#E5E5E1] hover:bg-white bg-[#F1EFEC] text-[#1A1A1A] text-[10px] font-medium uppercase tracking-[0.12em] transition-colors cursor-pointer"
                 >
                   {copied ? "Copied Key!" : "Copy Share Key"}
                 </button>
@@ -395,7 +395,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                     type="button"
                     onClick={handleRegenerateKey}
                     disabled={loading}
-                    className="flex-1 py-2 bg-[#1A1A1A] hover:bg-[#1A1A1A]/90 text-white text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                    className="flex-1 py-2 bg-[#315C4A] hover:bg-[#27493A] text-white text-[10px] font-medium uppercase tracking-[0.12em] transition-colors cursor-pointer"
                   >
                     Regenerate Key
                   </button>
@@ -403,7 +403,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
               </div>
             </div>
             
-            <p className="text-[10px] text-[#1A1A1A]/50 italic">
+            <p className="text-[10px] text-[#8A8F8B] italic">
               * Keep this key secure and distribute it only to trusted family members. Regenerating a key will immediately revoke access to any device currently logged in using the previous key.
             </p>
           </div>
@@ -411,22 +411,22 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
           {!isGuest && (
             <>
               {/* Email Delivery Configuration form */}
-              <div className="p-6 bg-white border border-[#E5E5E1] rounded-none space-y-6 shadow-sm">
-                <h3 className="font-serif italic text-lg text-[#1A1A1A] flex items-center gap-1.5" style={{ fontFamily: "Georgia, serif" }}>
+              <div className="p-6 bg-white border border-[#E5E5E1] rounded-[16px] space-y-6 shadow-sm">
+                <h3 className="font-serif italic text-lg text-[#1A1A1A] flex items-center gap-1.5">
                   <Server className="w-5 h-5 text-[#1A1A1A]" />
                   <span>Email Delivery Configuration</span>
                 </h3>
-            <p className="text-xs text-[#1A1A1A]/70 leading-relaxed">
+            <p className="text-xs text-[#454A46] leading-relaxed">
               Configure your personal SMTP server (Nodemailer) or Resend API credentials to automate legacy message delivery. If unconfigured, the system will fall back to server environment variables.
             </p>
 
             <form onSubmit={handleUpdateEmailConfig} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Delivery Protocol</label>
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Delivery Protocol</label>
                 <select
                   value={protocol}
                   onChange={(e) => setProtocol(e.target.value as any)}
-                  className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A] cursor-pointer font-bold uppercase tracking-wider text-[10px]"
+                  className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A] cursor-pointer font-medium uppercase tracking-[0.12em] text-[10px]"
                 >
                   <option value="SMTP">SMTP (Nodemailer)</option>
                   <option value="Resend">Resend API</option>
@@ -437,66 +437,66 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
                     <div className="col-span-2 space-y-1">
-                      <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">SMTP Host</label>
+                      <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">SMTP Host</label>
                       <input
                         type="text"
                         placeholder="smtp.gmail.com"
                         value={smtpHost}
                         onChange={(e) => setSmtpHost(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                        className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Port</label>
+                      <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Port</label>
                       <input
                         type="text"
                         placeholder="587"
                         value={smtpPort}
                         onChange={(e) => setSmtpPort(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                        className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">SMTP Username</label>
+                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">SMTP Username</label>
                     <input
                       type="text"
                       placeholder="your-email@gmail.com"
                       value={smtpUser}
                       onChange={(e) => setSmtpUser(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">SMTP Password / App Key</label>
+                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">SMTP Password / App Key</label>
                     <input
                       type="password"
                       placeholder="••••••••••••••••"
                       value={smtpPass}
                       onChange={(e) => setSmtpPass(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Sender "From" Email</label>
+                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Sender "From" Email</label>
                     <input
                       type="text"
                       placeholder='"LifeBook Legacy" <no-reply@lifebook.com>'
                       value={smtpFrom}
                       onChange={(e) => setSmtpFrom(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                     />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Resend API Key</label>
+                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Resend API Key</label>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#1A1A1A]/50">
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
                         <Key className="w-4 h-4" />
                       </span>
                       <input
@@ -504,19 +504,19 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                         placeholder="re_xxxxxxxxxxxxxx"
                         value={resendApiKey}
                         onChange={(e) => setResendApiKey(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Resend Sender Email (Verified Domain)</label>
+                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Resend Sender Email (Verified Domain)</label>
                     <input
                       type="text"
                       placeholder="onboarding@resend.dev"
                       value={resendFrom}
                       onChange={(e) => setResendFrom(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                     />
                   </div>
                 </div>
@@ -525,7 +525,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 mt-2 bg-[#1A1A1A] hover:bg-[#1A1A1A]/90 text-white rounded-none text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all flex items-center justify-center gap-1"
+                className="w-full py-2.5 mt-2 bg-[#315C4A] hover:bg-[#27493A] text-white rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] cursor-pointer transition-all flex items-center justify-center gap-1"
               >
                 {loading ? <Loader className="w-4 h-4 animate-spin" /> : <span>Save Email Credentials</span>}
               </button>
@@ -533,14 +533,14 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
           </div>
 
           {/* Password form */}
-          <div className="p-6 bg-white border border-[#E5E5E1] rounded-none space-y-6 shadow-sm">
-            <h3 className="font-serif italic text-lg text-[#1A1A1A]" style={{ fontFamily: "Georgia, serif" }}>Security Credentials</h3>
+          <div className="p-6 bg-white border border-[#E5E5E1] rounded-[16px] space-y-6 shadow-sm">
+            <h3 className="font-serif italic text-lg text-[#1A1A1A]">Security Credentials</h3>
 
             <form onSubmit={handleUpdatePassword} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Current Password</label>
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Current Password</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#1A1A1A]/50">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
                     <Lock className="w-4 h-4" />
                   </span>
                   <input
@@ -548,16 +548,16 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">New Password</label>
+                  <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">New Password</label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#1A1A1A]/50">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
                       <Lock className="w-4 h-4" />
                     </span>
                     <input
@@ -565,15 +565,15 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Confirm New Password</label>
+                  <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Confirm New Password</label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#1A1A1A]/50">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
                       <Lock className="w-4 h-4" />
                     </span>
                     <input
@@ -581,7 +581,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                     />
                   </div>
                 </div>
@@ -590,7 +590,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 mt-2 bg-white hover:bg-[#F1EFEC] border border-[#E5E5E1] text-[#1A1A1A] rounded-none text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all flex items-center justify-center gap-1"
+                className="w-full py-2.5 mt-2 bg-white hover:bg-[#F1EFEC] border border-[#E5E5E1] text-[#1A1A1A] rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] cursor-pointer transition-all flex items-center justify-center gap-1"
               >
                 {loading ? <Loader className="w-4 h-4 animate-spin" /> : <span>Update Secure Password</span>}
               </button>
@@ -598,19 +598,19 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
           </div>
 
           {/* Dangerous Zone */}
-          <div className="p-6 bg-red-50 border border-red-200 rounded-none space-y-4">
-            <h3 className="font-serif italic text-lg text-red-800 flex items-center gap-1.5" style={{ fontFamily: "Georgia, serif" }}>
-              <ShieldAlert className="w-5 h-5 text-red-700" />
+          <div className="p-6 bg-[#F9EFEB] border border-[#E8CDC4] rounded-[16px] space-y-4">
+            <h3 className="font-serif italic text-lg text-[#B4543E] flex items-center gap-1.5">
+              <ShieldAlert className="w-5 h-5 text-[#B4543E]" />
               <span>Danger Management Area</span>
             </h3>
-            <p className="text-xs text-red-800/80 leading-relaxed">
+            <p className="text-xs text-[#B4543E]/80 leading-relaxed">
               Erasing your account immediately, irreversibly purges your identity ledgers, database profiles, uploaded photos/documents, family connection circles, and generated memoir volumes.
             </p>
 
             <button
               onClick={handleDeleteAccount}
               disabled={loading}
-              className="px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white rounded-none text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer w-full"
+              className="px-4 py-2.5 bg-[#B4543E] hover:bg-[#9E4132] text-white rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] flex items-center justify-center gap-1.5 transition-colors cursor-pointer w-full"
             >
               <Trash2 className="w-4 h-4" />
               <span>Delete LifeBook Account</span>

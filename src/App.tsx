@@ -28,7 +28,7 @@ import AdPlacement from "./components/AdPlacement";
 import {
   BookOpen, Heart, Calendar, Lock, Users, HardDrive, MessageSquare, 
   Search, Settings, Bell, LogOut, ChevronRight, Menu, X, ShieldAlert, Sparkles, Video,
-  CreditCard
+  CreditCard, Image
 } from "lucide-react";
 import { MONETIZATION_ENABLED } from "./config";
 
@@ -156,9 +156,9 @@ export default function App() {
 
   if (loading) {
     return (
-      <div id="app-bootstrap-loader" className="min-h-screen bg-[#0F172A] text-[#F1F5F9] flex flex-col items-center justify-center font-sans gap-3">
+      <div id="app-bootstrap-loader" className="min-h-screen bg-[#F7F4ED] text-[#1E2521] flex flex-col items-center justify-center font-sans gap-4">
         <LoaderComponent />
-        <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest animate-pulse font-bold">Decrypting legacy ledgers &amp; cloud quotas...</span>
+        <span className="text-sm text-[#8A8F8B] animate-pulse">Opening your LifeBook…</span>
       </div>
     );
   }
@@ -177,52 +177,54 @@ export default function App() {
   const currentRole = user.role || subInfo.role || "Free User";
 
   return (
-    <div id="app-shell" className="min-h-screen bg-[#0F172A] text-[#F1F5F9] flex flex-col font-sans">
+    <div id="app-shell" className="min-h-screen bg-[#F7F4ED] text-[#1E2521] flex flex-col font-sans">
       
       {/* Top Header */}
-      <header id="app-header" className="h-20 border-b border-[#334155] bg-[#0F172A]/95 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-6 md:px-8">
+      <header id="app-header" className="h-20 border-b border-[#E5E5E1] bg-[#FCFBF7]/90 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-6 md:px-8">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-            className="p-2 hover:bg-[#1E293B] rounded-none lg:hidden text-[#F1F5F9] transition-colors cursor-pointer"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            className="p-2 hover:bg-[#F1EFEC] rounded-[10px] lg:hidden text-[#454A46] transition-colors cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab("dashboard")}>
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-[#F59E0B]/50 bg-white flex items-center justify-center flex-shrink-0 shadow-md">
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-[#E2EBE4] bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
               <img src="/logo.png" alt="LifeBook Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-serif italic tracking-tighter text-[#F1F5F9] leading-none" style={{ fontFamily: "Georgia, serif" }}>LifeBook</span>
-              <span className="text-[9px] uppercase tracking-[0.15em] text-[#F59E0B] font-mono font-bold hidden sm:inline">Your Life. Your Legacy. Forever.</span>
+              <span className="text-2xl font-serif italic tracking-tight text-[#1E2521] leading-none">LifeBook</span>
+              <span className="text-[9px] uppercase tracking-[0.18em] text-[#7E9B89] font-medium hidden sm:inline">Your life. Your legacy. Forever.</span>
             </div>
           </div>
         </div>
 
         {/* Global Toolbar */}
-        <div className="flex items-center gap-3 md:gap-4 relative">
+        <div className="flex items-center gap-2 md:gap-3 relative">
 
           {/* Quick Storage Meter (Compact Top Bar Pill) */}
           <div 
-            onClick={() => setActiveTab("plans")}
-            className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 bg-[#1E293B] hover:bg-[#334155] border border-[#334155] transition-all cursor-pointer"
+            onClick={() => MONETIZATION_ENABLED && setActiveTab("plans")}
+            className={`hidden sm:flex items-center gap-2.5 px-3 py-1.5 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[10px] transition-all ${MONETIZATION_ENABLED ? "hover:border-[#B8C9BD] cursor-pointer" : "cursor-default"}`}
           >
-            <HardDrive className="w-4 h-4 text-[#F59E0B]" />
+            <HardDrive className="w-4 h-4 text-[#315C4A]" />
             <div className="flex flex-col text-right leading-none">
-              <span className="text-[11px] font-mono font-bold text-[#F1F5F9]">
+              <span className="text-[11px] font-medium text-[#1E2521]">
                 {subInfo.storageUsedGB} / {subInfo.storageLimitGB} GB
               </span>
-              <span className="text-[9px] text-[#F59E0B] font-semibold">
-                {currentPlan} Tier
+              <span className="text-[9px] text-[#8A8F8B]">
+                {currentPlan} plan
               </span>
             </div>
           </div>
 
-          {/* Universal Search Tab quick link */}
+          {/* Universal Search quick link */}
           <button 
             onClick={() => setActiveTab("search")}
-            className={`p-2 hover:bg-[#1E293B] rounded-none transition-all cursor-pointer ${activeTab === "search" ? "text-[#F59E0B] bg-[#1E293B]" : "text-[#64748B] hover:text-[#F1F5F9]"}`}
+            aria-label="Search your LifeBook"
+            className={`p-2 rounded-[10px] transition-all cursor-pointer ${activeTab === "search" ? "text-[#315C4A] bg-[#E2EBE4]" : "text-[#8A8F8B] hover:text-[#1E2521] hover:bg-[#F1EFEC]"}`}
           >
             <Search className="w-5 h-5" />
           </button>
@@ -231,43 +233,44 @@ export default function App() {
           <div className="relative">
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 hover:bg-[#1E293B] rounded-none text-[#64748B] hover:text-[#F1F5F9] transition-all cursor-pointer relative"
+              aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+              className={`p-2 rounded-[10px] transition-all cursor-pointer relative ${activeTab && showNotifications ? "text-[#315C4A] bg-[#E2EBE4]" : "text-[#8A8F8B] hover:text-[#1E2521] hover:bg-[#F1EFEC]"}`}
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#F59E0B] rounded-full"></span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#C9826B] rounded-full"></span>
               )}
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-[#1E293B] border border-[#334155] rounded-none shadow-2xl p-4 space-y-3 z-50 text-[#F1F5F9]">
-                <div className="flex justify-between items-center pb-2 border-b border-[#334155]">
-                  <h5 className="text-xs font-bold uppercase tracking-wider text-[#F59E0B]">Legacy Notifications</h5>
+              <div className="absolute right-0 mt-2 w-80 bg-[#FCFBF7] border border-[#E5E5E1] rounded-[16px] shadow-[0_4px_12px_rgba(30,37,33,0.06),0_16px_40px_rgba(30,37,33,0.09)] p-4 space-y-3 z-50 text-[#1E2521] animate-fade-in">
+                <div className="flex justify-between items-center pb-2 border-b border-[#E5E5E1]">
+                  <h5 className="text-xs font-semibold uppercase tracking-wider text-[#454A46]">Notifications</h5>
                   {notifications.length > 0 && (
                     <button 
                       onClick={handleClearNotifications}
-                      className="text-[10px] text-[#64748B] hover:text-[#F1F5F9] cursor-pointer transition-colors font-bold underline"
+                      className="text-[10px] text-[#8A8F8B] hover:text-[#1E2521] cursor-pointer transition-colors underline underline-offset-2"
                     >
-                      Clear All
+                      Clear all
                     </button>
                   )}
                 </div>
 
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <p className="text-[10px] text-[#64748B] py-4 text-center">No active legacy updates.</p>
+                    <p className="text-xs text-[#8A8F8B] py-4 text-center">You're all caught up.</p>
                   ) : (
                     notifications.map(n => (
                       <div 
                         key={n.id} 
                         onClick={() => handleMarkNotificationRead(n.id)}
-                        className={`p-2.5 text-[11px] leading-normal transition-all cursor-pointer border ${
+                        className={`p-2.5 text-xs leading-normal transition-all cursor-pointer rounded-[10px] border ${
                           n.read 
-                            ? "bg-[#0F172A]/40 border-[#334155] text-[#64748B]" 
-                            : "bg-[#1E293B] border-[#475569] text-[#F1F5F9] font-medium"
+                            ? "bg-[#F7F4ED] border-[#E5E5E1] text-[#8A8F8B]" 
+                            : "bg-[#E2EBE4]/60 border-[#B8C9BD] text-[#1E2521] font-medium"
                         }`}
                       >
-                        {n.title && <p className="font-bold mb-0.5">{n.title}</p>}
+                        {n.title && <p className="font-semibold mb-0.5">{n.title}</p>}
                         <p>{n.message || (n as any).text}</p>
                       </div>
                     ))
@@ -281,9 +284,9 @@ export default function App() {
           <div className="relative flex items-center">
             <button 
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              className="flex items-center gap-2.5 pl-2 border-l border-[#334155] hover:bg-[#1E293B] p-1.5 transition-colors cursor-pointer"
+              className="flex items-center gap-2.5 pl-2 border-l border-[#E5E5E1] hover:bg-[#F1EFEC] p-1.5 rounded-[10px] transition-colors cursor-pointer"
             >
-              <div className="w-9 h-9 rounded-full bg-[#1E293B] border border-[#334155] flex items-center justify-center text-xs font-serif italic font-bold text-[#F1F5F9] overflow-hidden flex-shrink-0">
+              <div className="w-9 h-9 rounded-full bg-[#E2EBE4] border border-[#B8C9BD] flex items-center justify-center text-xs font-serif italic font-semibold text-[#315C4A] overflow-hidden flex-shrink-0">
                 {user.profilePhoto ? (
                   <img referrerPolicy="no-referrer" src={user.profilePhoto} className="w-full h-full object-cover" />
                 ) : (
@@ -291,8 +294,8 @@ export default function App() {
                 )}
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-xs font-bold text-[#F1F5F9] leading-none">{user.name}</p>
-                <span className="text-[9px] text-[#64748B] font-semibold">{currentRole}</span>
+                <p className="text-xs font-semibold text-[#1E2521] leading-none">{user.name}</p>
+                <span className="text-[9px] text-[#8A8F8B]">{currentRole}</span>
               </div>
             </button>
 
@@ -300,13 +303,13 @@ export default function App() {
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)}></div>
                 
-                <div className="absolute right-0 top-11 mt-2 w-64 bg-[#1E293B] border border-[#334155] rounded-none shadow-2xl p-2 z-50 text-[#F1F5F9] animate-fade-in space-y-1">
-                  <div className="p-3 border-b border-[#334155]">
-                    <p className="text-xs font-bold text-[#F1F5F9] leading-none">{user.name}</p>
-                    <p className="text-[9px] text-[#64748B] font-semibold mt-1 truncate">{user.email}</p>
-                    <div className="mt-2 pt-2 border-t border-[#334155]/60 flex justify-between items-center text-[10px]">
-                      <span className="text-[#94A3B8]">Active Plan:</span>
-                      <span className="text-[#F59E0B] font-bold">{currentPlan}</span>
+                <div className="absolute right-0 top-11 mt-2 w-64 bg-[#FCFBF7] border border-[#E5E5E1] rounded-[16px] shadow-[0_4px_12px_rgba(30,37,33,0.06),0_16px_40px_rgba(30,37,33,0.09)] p-2 z-50 text-[#1E2521] animate-fade-in space-y-1">
+                  <div className="p-3 border-b border-[#E5E5E1]">
+                    <p className="text-xs font-semibold text-[#1E2521] leading-none">{user.name}</p>
+                    <p className="text-[10px] text-[#8A8F8B] mt-1 truncate">{user.email}</p>
+                    <div className="mt-2 pt-2 border-t border-[#E5E5E1]/60 flex justify-between items-center text-[10px]">
+                      <span className="text-[#8A8F8B]">Plan:</span>
+                      <span className="text-[#315C4A] font-semibold">{currentPlan}</span>
                     </div>
                   </div>
 
@@ -314,34 +317,34 @@ export default function App() {
                     {MONETIZATION_ENABLED && (
                     <button
                       onClick={() => { setActiveTab("plans"); setUserDropdownOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider hover:bg-[#334155] transition-colors cursor-pointer text-[#F59E0B]"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-medium rounded-[10px] hover:bg-[#F1EFEC] transition-colors cursor-pointer text-[#1E2521]"
                     >
-                      <HardDrive className="w-4 h-4" />
-                      <span>Upgrade Storage</span>
+                      <HardDrive className="w-4 h-4 text-[#315C4A]" />
+                      <span>Upgrade storage</span>
                     </button>
                     )}
                     {MONETIZATION_ENABLED && (
                     <button
                       onClick={() => { setActiveTab("billing"); setUserDropdownOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider hover:bg-[#334155] transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-medium rounded-[10px] hover:bg-[#F1EFEC] transition-colors cursor-pointer text-[#1E2521]"
                     >
-                      <CreditCard className="w-4 h-4 text-[#64748B]" />
-                      <span>Billing &amp; Invoices</span>
+                      <CreditCard className="w-4 h-4 text-[#8A8F8B]" />
+                      <span>Billing &amp; invoices</span>
                     </button>
                     )}
                     <button
                       onClick={() => { setActiveTab("settings"); setUserDropdownOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider hover:bg-[#334155] transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-medium rounded-[10px] hover:bg-[#F1EFEC] transition-colors cursor-pointer text-[#1E2521]"
                     >
-                      <Settings className="w-4 h-4 text-[#64748B]" />
-                      <span>Owner Settings</span>
+                      <Settings className="w-4 h-4 text-[#8A8F8B]" />
+                      <span>Settings</span>
                     </button>
                     <button
                       onClick={() => { handleLogout(); setUserDropdownOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-[#EF4444] hover:bg-[#EF4444]/10 hover:text-[#F87171] transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-medium rounded-[10px] text-[#B4543E] hover:bg-[#B4543E]/10 transition-colors cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>Sign Out Legacy</span>
+                      <span>Sign out</span>
                     </button>
                   </div>
                 </div>
@@ -357,7 +360,7 @@ export default function App() {
         {/* Navigation Sidebar */}
         <aside 
           id="app-sidebar" 
-          className={`w-64 border-r border-[#334155] bg-[#1E293B] p-4 space-y-6 flex-shrink-0 flex flex-col justify-between fixed lg:sticky top-20 bottom-0 z-30 transition-all duration-300 ${
+          className={`w-64 border-r border-[#E5E5E1] bg-[#FCFBF7] p-4 space-y-6 flex-shrink-0 flex flex-col justify-between fixed lg:sticky top-20 bottom-0 z-30 transition-all duration-300 ${
             mobileMenuOpen ? "left-0" : "-left-64 lg:left-0"
           }`}
         >
@@ -371,23 +374,23 @@ export default function App() {
               variant="sidebar"
             />
 
-            <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-[0.2em] pl-3 block pt-2">
-              Legacy &amp; SaaS Modules
+            <span className="text-[10px] font-semibold text-[#8A8F8B] uppercase tracking-[0.2em] pl-3 block pt-2">
+              Your Legacy
             </span>
 
-            <nav className="space-y-1">
+            <nav className="space-y-1" aria-label="Main navigation">
               {[
-                { id: "dashboard", label: "Dashboard Hub", icon: <Heart className="w-4 h-4" /> },
-                ...(MONETIZATION_ENABLED ? [{ id: "plans", label: "Storage Plans", icon: <HardDrive className="w-4 h-4 text-[#F59E0B]" />, highlight: true }] : []),
-                { id: "memories", label: "Memory Vault", icon: <Heart className="w-4 h-4" /> },
-                { id: "timeline", label: "Life Timeline", icon: <Calendar className="w-4 h-4" /> },
-                { id: "messages", label: "Time-Capsule Letters", icon: <Lock className="w-4 h-4" /> },
-                { id: "family", label: "Family Circle Tree", icon: <Users className="w-4 h-4" /> },
-                { id: "vault", label: "Secure Digital Vault", icon: <HardDrive className="w-4 h-4" /> },
-                { id: "stories", label: "AI Biography Shelf", icon: <BookOpen className="w-4 h-4" /> },
-                { id: "companion", label: "AI Life Companion", icon: <MessageSquare className="w-4 h-4" /> },
-                { id: "video", label: "Google Flow AI Video", icon: <Video className="w-4 h-4" /> },
-                ...(MONETIZATION_ENABLED ? [{ id: "billing", label: "Billing & Invoices", icon: <CreditCard className="w-4 h-4" /> }] : [])
+                { id: "dashboard", label: "Home", icon: <Heart className="w-4 h-4" /> },
+                { id: "memories", label: "Memories", icon: <Heart className="w-4 h-4" /> },
+                { id: "timeline", label: "Timeline", icon: <Calendar className="w-4 h-4" /> },
+                { id: "messages", label: "Messages", icon: <Lock className="w-4 h-4" /> },
+                { id: "family", label: "Family", icon: <Users className="w-4 h-4" /> },
+                { id: "vault", label: "Vault", icon: <ShieldAlert className="w-4 h-4" /> },
+                { id: "stories", label: "Stories", icon: <BookOpen className="w-4 h-4" /> },
+                { id: "companion", label: "AI Companion", icon: <MessageSquare className="w-4 h-4" /> },
+                { id: "video", label: "Legacy Film", icon: <Video className="w-4 h-4" /> },
+                ...(MONETIZATION_ENABLED ? [{ id: "plans", label: "Storage Plans", icon: <HardDrive className="w-4 h-4 text-[#315C4A]" />, highlight: true }] : []),
+                ...(MONETIZATION_ENABLED ? [{ id: "billing", label: "Billing", icon: <CreditCard className="w-4 h-4" /> }] : [])
               ].map(item => (
                 <button
                   key={item.id}
@@ -395,12 +398,11 @@ export default function App() {
                     setActiveTab(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer rounded-none ${
+                  aria-current={activeTab === item.id ? "page" : undefined}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium transition-all cursor-pointer rounded-[10px] ${
                     activeTab === item.id 
-                      ? "bg-[#F59E0B] text-[#0F172A] font-bold" 
-                      : item.highlight
-                      ? "text-[#F59E0B] hover:bg-[#334155] hover:text-[#F1F5F9]"
-                      : "text-[#64748B] hover:bg-[#334155] hover:text-[#F1F5F9]"
+                      ? "bg-[#E2EBE4] text-[#315C4A]" 
+                      : "text-[#454A46] hover:bg-[#F1EFEC] hover:text-[#1E2521]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -417,46 +419,46 @@ export default function App() {
           </div>
 
           {/* Sidebar Footer */}
-          <div className="space-y-2 pt-4 border-t border-[#334155]">
+          <div className="space-y-1 pt-4 border-t border-[#E5E5E1]">
             <button
               onClick={() => { setActiveTab("settings"); setMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer rounded-none ${
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium transition-all cursor-pointer rounded-[10px] ${
                 activeTab === "settings" 
-                  ? "bg-[#F59E0B] text-[#0F172A] font-bold" 
-                  : "text-[#64748B] hover:bg-[#334155] hover:text-[#F1F5F9]"
+                  ? "bg-[#E2EBE4] text-[#315C4A]" 
+                  : "text-[#454A46] hover:bg-[#F1EFEC] hover:text-[#1E2521]"
               }`}
             >
               <Settings className="w-4 h-4" />
-              <span>Owner Settings</span>
+              <span>Settings</span>
             </button>
 
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[#EF4444] hover:bg-[#EF4444]/10 hover:text-[#F87171] transition-all cursor-pointer rounded-none"
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-[#B4543E] hover:bg-[#B4543E]/10 transition-all cursor-pointer rounded-[10px]"
             >
               <LogOut className="w-4 h-4" />
-              <span>Sign Out Legacy</span>
+              <span>Sign out</span>
             </button>
           </div>
         </aside>
 
         {/* Content Canvas Container */}
-        <main id="app-main-canvas" className="flex-grow p-6 md:p-8 bg-[#0F172A] overflow-y-auto max-w-full">
+        <main id="app-main-canvas" className="flex-grow p-6 md:p-8 pb-24 md:pb-8 bg-[#F7F4ED] overflow-y-auto max-w-full">
           {guestMode && (
-            <div className="mb-6 p-4 bg-[#1E293B] border border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
+            <div className="mb-6 p-4 bg-[#E2EBE4]/70 border border-[#B8C9BD] rounded-[16px] flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-[#F59E0B] text-[#0F172A] rounded-none">
+                <div className="p-2 bg-[#315C4A] text-[#FCFBF7] rounded-[10px]">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#F59E0B]">Family Vault Viewer Mode</h4>
-                  <p className="text-[11px] text-[#64748B] font-medium">
-                    You are logged in under a secure family access session to explore the private legacy of <span className="font-bold text-[#F1F5F9]">{user?.ownerName || "the legacy owner"}</span>.
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#315C4A]">Family view</h4>
+                  <p className="text-xs text-[#454A46]">
+                    You're visiting <span className="font-semibold text-[#1E2521]">{user?.ownerName || "the legacy owner"}</span>'s LifeBook with view-only access.
                   </p>
                 </div>
               </div>
-              <div className="px-3 py-1 bg-[#F59E0B]/10 text-[9px] font-mono tracking-wider font-bold text-[#F59E0B]">
-                View-Only Privilege Enabled
+              <div className="px-3 py-1 bg-[#FCFBF7] border border-[#B8C9BD] text-[10px] tracking-wider font-medium text-[#315C4A] rounded-full">
+                View only
               </div>
             </div>
           )}
@@ -558,18 +560,52 @@ export default function App() {
             />
           )}
         </main>
+
+        {/* Mobile bottom navigation (§19): high-frequency destinations + drawer for the rest */}
+        <nav
+          id="app-mobile-nav"
+          aria-label="Quick navigation"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex justify-around items-stretch bg-[#FCFBF7]/90 backdrop-blur-md border-t border-[#E5E5E1] pb-[env(safe-area-inset-bottom)]"
+        >
+          {[
+            { id: "dashboard", label: "Home", icon: <Heart className="w-5 h-5" /> },
+            { id: "memories", label: "Memories", icon: <Image className="w-5 h-5" /> },
+            { id: "timeline", label: "Timeline", icon: <Calendar className="w-5 h-5" /> },
+            { id: "family", label: "Family", icon: <Users className="w-5 h-5" /> },
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              aria-current={activeTab === item.id ? "page" : undefined}
+              className={`flex flex-col items-center justify-center gap-0.5 py-2.5 px-2 text-[10px] font-medium transition-colors cursor-pointer ${
+                activeTab === item.id ? "text-[#315C4A]" : "text-[#454A46]"
+              }`}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          ))}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="More sections"
+            aria-expanded={mobileMenuOpen}
+            className="flex flex-col items-center justify-center gap-0.5 py-2.5 px-2 text-[10px] font-medium text-[#454A46] transition-colors cursor-pointer"
+          >
+            <Menu className="w-5 h-5" />
+            <span>More</span>
+          </button>
+        </nav>
       </div>
     </div>
   );
 }
 
-// Inline Helper spinner
+// Inline Helper: a small open-book mark while LifeBook wakes up
 function LoaderComponent() {
   return (
-    <div className="relative w-12 h-12 flex items-center justify-center">
-      <div className="absolute w-12 h-12 border-2 border-[#334155] rounded-full"></div>
-      <div className="absolute w-12 h-12 border-2 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+    <div className="relative w-14 h-14 flex items-center justify-center animate-breathe" aria-hidden="true">
+      <div className="absolute inset-0 rounded-full bg-[#E2EBE4]"></div>
+      <BookOpen className="relative w-6 h-6 text-[#315C4A]" />
     </div>
   );
 }
-

@@ -57,7 +57,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
       const data = await api.getMemories();
       setMemories(data);
     } catch (err: any) {
-      setError(err.message || "Failed to load memories");
+      setError(err.message || "We couldn't open your memories. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -138,7 +138,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
         }
       }
     } catch (err: any) {
-      setError("File upload failed: " + err.message);
+      setError("We couldn't upload that file. " + err.message);
     } finally {
       setUploading(false);
       setUploadProgress(null);
@@ -180,7 +180,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
       fetchMemories();
       onMemoryChanged(); // Trigger dashboard update
     } catch (err: any) {
-      setError(err.message || "Failed to save memory");
+      setError(err.message || "We couldn't save that memory. Please try again.");
     }
   };
 
@@ -191,7 +191,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
       fetchMemories();
       onMemoryChanged();
     } catch (err: any) {
-      setError(err.message || "Failed to delete memory");
+      setError(err.message || "We couldn't remove that memory. Please try again.");
     }
   };
 
@@ -265,23 +265,23 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
   }, [viewingMemory]);
 
   return (
-    <div id="memory-vault-root" className="space-y-6 animate-fade-in text-slate-100">
-      <div id="vault-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-700">
+    <div id="memory-vault-root" className="space-y-6 animate-fade-in text-[#1E2521]">
+      <div id="vault-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#E5E5E1]">
         <div>
-          <h2 className="text-3xl font-serif italic text-white flex items-center gap-2">
-            <Heart className="w-6 h-6 text-amber-500" />
+          <h2 className="text-3xl font-serif italic text-[#1E2521] flex items-center gap-2">
+            <Heart className="w-6 h-6 text-[#C9A66B]" />
             <span>Memory Vault</span>
           </h2>
-          <p className="text-slate-400 text-xs">Preserve the stories, milestones, pictures, and records of your lifetime in high-fidelity capsules.</p>
+          <p className="text-[#8A8F8B] text-xs">Preserve the stories, milestones, pictures, and records of your lifetime in high-fidelity capsules.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           {/* View Mode Switcher */}
-          <div className="flex items-center bg-slate-800 p-1 border border-slate-700 rounded-lg">
+          <div className="flex items-center bg-[#F1EFEC] p-1 border border-[#E5E5E1] rounded-[24px]">
             <button
               onClick={() => setViewMode('capsules')}
-              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer rounded-md ${
-                viewMode === 'capsules' ? 'bg-amber-500 text-slate-900 font-bold' : 'text-slate-300 hover:text-white'
+              className={`px-3 py-1.5 text-xs font-medium uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors cursor-pointer rounded-[16px] ${
+                viewMode === 'capsules' ? 'bg-[#C9A66B] text-[#1E2521] font-bold' : 'text-[#454A46] hover:text-[#1E2521]'
               }`}
             >
               <Grid className="w-3.5 h-3.5" />
@@ -289,8 +289,8 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
             </button>
             <button
               onClick={() => setViewMode('gallery')}
-              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer rounded-md ${
-                viewMode === 'gallery' ? 'bg-amber-500 text-slate-900 font-bold' : 'text-slate-300 hover:text-white'
+              className={`px-3 py-1.5 text-xs font-medium uppercase tracking-[0.12em] flex items-center gap-1.5 transition-colors cursor-pointer rounded-[16px] ${
+                viewMode === 'gallery' ? 'bg-[#C9A66B] text-[#1E2521] font-bold' : 'text-[#454A46] hover:text-[#1E2521]'
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
@@ -302,7 +302,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
             <button
               id="add-memory-btn"
               onClick={handleOpenCreateForm}
-              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-905 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-amber-500/10 font-bold"
+              className="px-5 py-2.5 bg-[#C9A66B] hover:bg-[#B08F55] text-[#1E2521] text-xs font-medium uppercase tracking-[0.12em] rounded-[24px] flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#C9A66B]/10 font-bold"
             >
               <Plus className="w-4 h-4 font-bold" />
               <span>Record New Memory</span>
@@ -312,9 +312,9 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
       </div>
 
       {/* Filters Panel */}
-      <div id="filters-panel" className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+      <div id="filters-panel" className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#EFE9DD]/60 p-4 rounded-[32px] border border-[#E5E5E1]">
         <div className="relative">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
             <Search className="w-4 h-4" />
           </span>
           <input
@@ -322,34 +322,34 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
             placeholder="Search memories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+            className="w-full pl-9 pr-4 py-2 bg-[#FCFBF7] border border-[#E5E5E1] rounded-[24px] text-[#1E2521] text-xs focus:outline-none focus:border-[#C9A66B] focus:ring-1 focus:ring-[#C9A66B]"
           />
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
+        <div className="flex items-center gap-2 bg-[#FCFBF7] border border-[#E5E5E1] rounded-[24px] px-3 py-1.5">
+          <Filter className="w-3.5 h-3.5 text-[#8A8F8B]" />
           <select
             value={mediaFilter}
             onChange={(e) => setMediaFilter(e.target.value)}
-            className="bg-transparent text-slate-200 text-xs focus:outline-none w-full cursor-pointer font-medium"
+            className="bg-transparent text-[#1A1A1A] text-xs focus:outline-none w-full cursor-pointer font-medium"
           >
-            <option value="all" className="bg-slate-800 text-slate-200">All Media Types</option>
-            <option value="image" className="bg-slate-800 text-slate-200">Photos Only</option>
-            <option value="video" className="bg-slate-800 text-slate-200">Videos Only</option>
-            <option value="audio" className="bg-slate-800 text-slate-200">Voice recordings</option>
+            <option value="all" className="bg-[#F1EFEC] text-[#1A1A1A]">All Media Types</option>
+            <option value="image" className="bg-[#F1EFEC] text-[#1A1A1A]">Photos Only</option>
+            <option value="video" className="bg-[#F1EFEC] text-[#1A1A1A]">Videos Only</option>
+            <option value="audio" className="bg-[#F1EFEC] text-[#1A1A1A]">Voice recordings</option>
           </select>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5">
-          <Tag className="w-3.5 h-3.5 text-slate-400" />
+        <div className="flex items-center gap-2 bg-[#FCFBF7] border border-[#E5E5E1] rounded-[24px] px-3 py-1.5">
+          <Tag className="w-3.5 h-3.5 text-[#8A8F8B]" />
           <select
             value={selectedTag}
             onChange={(e) => setSelectedTag(e.target.value)}
-            className="bg-transparent text-slate-200 text-xs focus:outline-none w-full cursor-pointer font-medium"
+            className="bg-transparent text-[#1A1A1A] text-xs focus:outline-none w-full cursor-pointer font-medium"
           >
-            <option value="" className="bg-slate-800 text-slate-200">All Tags</option>
+            <option value="" className="bg-[#F1EFEC] text-[#1A1A1A]">All Tags</option>
             {allTags.map(tag => (
-              <option key={tag} value={tag} className="bg-slate-800 text-slate-200">{tag}</option>
+              <option key={tag} value={tag} className="bg-[#F1EFEC] text-[#1A1A1A]">{tag}</option>
             ))}
           </select>
         </div>
@@ -357,7 +357,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
         <div className="flex items-center justify-start md:justify-center">
           <button 
             onClick={() => { setSearchQuery(""); setSelectedTag(""); setMediaFilter("all"); }}
-            className="text-xs text-slate-400 hover:text-amber-400 transition-colors cursor-pointer font-bold uppercase tracking-wider underline decoration-1"
+            className="text-xs text-[#8A8F8B] hover:text-[#C9A66B] transition-colors cursor-pointer font-medium uppercase tracking-[0.12em] underline decoration-1"
           >
             Reset Filters
           </button>
@@ -365,25 +365,25 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
       </div>
 
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+        <div className="p-3 bg-[#C9826B]/10 border border-[#C9826B]/20 text-[#B4543E] rounded-[24px] text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-[#B4543E] flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Memories Grid List */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
-          <Loader className="w-8 h-8 animate-spin text-amber-500" />
+        <div className="flex flex-col items-center justify-center py-24 text-[#8A8F8B] gap-3">
+          <Loader className="w-8 h-8 animate-spin text-[#C9A66B]" />
           <span className="text-xs font-medium uppercase tracking-wider">Accessing your Memory Vault...</span>
         </div>
       ) : filteredMemories.length === 0 ? (
-        <div className="text-center py-20 bg-slate-800/40 rounded-xl border border-slate-700 p-6 animate-fade-in">
-          <div className="mx-auto w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center text-slate-200 mb-4 border border-slate-700">
-            <Heart className="w-5 h-5 text-amber-500" />
+        <div className="text-center py-20 bg-[#EFE9DD] rounded-[32px] border border-[#E5E5E1] p-6 animate-fade-in">
+          <div className="mx-auto w-12 h-12 bg-[#F1EFEC] rounded-full flex items-center justify-center text-[#1A1A1A] mb-4 border border-[#E5E5E1]">
+            <Heart className="w-5 h-5 text-[#C9A66B]" />
           </div>
-          <h3 className="text-lg font-serif italic text-white">No Memories Found</h3>
-          <p className="text-slate-400 text-xs mt-1 max-w-sm mx-auto leading-relaxed">
+          <h3 className="text-lg font-serif italic text-[#1E2521]">Your story awaits</h3>
+          <p className="text-[#8A8F8B] text-xs mt-1 max-w-sm mx-auto leading-relaxed">
             {searchQuery || selectedTag || mediaFilter !== "all" 
               ? "No items match your active filters. Try resetting search fields."
               : "Welcome to your story ledger. Record your birth origins, childhood moments, achievements, or values."}
@@ -391,7 +391,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
           {!guestMode && !searchQuery && !selectedTag && (
             <button
               onClick={handleOpenCreateForm}
-              className="mt-4 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer transition-colors shadow-md"
+              className="mt-4 px-5 py-2.5 bg-[#C9A66B] hover:bg-[#B08F55] text-[#1E2521] text-xs font-medium uppercase tracking-[0.12em] rounded-[24px] cursor-pointer transition-colors shadow-md"
             >
               Log your First Memory
             </button>
@@ -400,12 +400,12 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
       ) : viewMode === 'gallery' ? (
         /* Photo Gallery Grid View */
         allPhotos.length === 0 ? (
-          <div className="text-center py-20 bg-slate-800/40 rounded-xl border border-slate-700 p-6 animate-fade-in">
-            <div className="mx-auto w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center text-slate-200 mb-4 border border-slate-700">
-              <Image className="w-5 h-5 text-amber-500" />
+          <div className="text-center py-20 bg-[#EFE9DD] rounded-[32px] border border-[#E5E5E1] p-6 animate-fade-in">
+            <div className="mx-auto w-12 h-12 bg-[#F1EFEC] rounded-full flex items-center justify-center text-[#1A1A1A] mb-4 border border-[#E5E5E1]">
+              <Image className="w-5 h-5 text-[#C9A66B]" />
             </div>
-            <h3 className="text-lg font-serif italic text-white">No Photos Available</h3>
-            <p className="text-slate-400 text-xs mt-1 max-w-sm mx-auto leading-relaxed">
+            <h3 className="text-lg font-serif italic text-[#1E2521]">The gallery is waiting</h3>
+            <p className="text-[#8A8F8B] text-xs mt-1 max-w-sm mx-auto leading-relaxed">
               No photos match your active search filters or exist in your Memory Vault yet. Upload photos when creating memory entries.
             </p>
           </div>
@@ -415,21 +415,21 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
               <div
                 key={`${item.file.id}_${idx}`}
                 onClick={() => handleOpenGalleryPhoto(item)}
-                className="group relative aspect-square bg-slate-900 border border-slate-700 overflow-hidden cursor-pointer shadow-md rounded-xl hover:border-amber-500/80 hover:shadow-[0_0_20px_rgba(245,158,11,0.18)] hover:-translate-y-1 transition-all duration-300"
+                className="group relative aspect-square bg-[#FCFBF7] border border-[#E5E5E1] overflow-hidden cursor-pointer shadow-md rounded-[32px] hover:border-[#C9A66B]/80 hover:shadow-[0_0_20px_rgba(245,158,11,0.18)] hover:-translate-y-1 transition-all duration-300"
               >
                 <img 
                   src={item.file.url} 
                   alt={item.file.name} 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute top-2 right-2 p-1.5 bg-slate-950/80 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity border border-slate-700">
-                  <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+                <div className="absolute top-2 right-2 p-1.5 bg-[#141A16]/80 text-white rounded-[24px] opacity-0 group-hover:opacity-100 transition-opacity border border-[rgba(252,251,247,0.20)]">
+                  <Maximize2 className="w-3.5 h-3.5 text-[#C9A66B]" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end text-white">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-450 truncate">{item.memory.title}</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141A16] via-[#141A16]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end text-white">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#C9A66B] truncate">{item.memory.title}</span>
                   <span className="text-xs font-serif italic line-clamp-1">{item.file.name || "Vault Photo"}</span>
-                  <span className="text-[9px] text-slate-300 flex items-center gap-1 mt-1">
-                    <Calendar className="w-2.5 h-2.5 text-amber-500" />
+                  <span className="text-[9px] text-[#454A46] flex items-center gap-1 mt-1">
+                    <Calendar className="w-2.5 h-2.5 text-[#C9A66B]" />
                     {new Date(item.memory.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short' })}
                   </span>
                 </div>
@@ -446,7 +446,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
               <div 
                 key={memory.id} 
                 onClick={() => handleOpenMemoryDetails(memory)}
-                className="group relative aspect-square bg-slate-900 border border-slate-700 overflow-hidden cursor-pointer shadow-md rounded-xl hover:border-amber-500/80 hover:shadow-[0_0_20px_rgba(245,158,11,0.18)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+                className="group relative aspect-square bg-[#FCFBF7] border border-[#E5E5E1] overflow-hidden cursor-pointer shadow-md rounded-[32px] hover:border-[#C9A66B]/80 hover:shadow-[0_0_20px_rgba(245,158,11,0.18)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
               >
                 {firstImage ? (
                   /* Image Capsule */
@@ -458,9 +458,9 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                     />
                     
                     {/* Minimal hover overlay for title description */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-350 p-3 flex flex-col justify-end text-white">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-450 truncate">{memory.title}</span>
-                      <span className="text-[9px] text-slate-300 mt-0.5">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#141A16] via-[#141A16]/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 p-3 flex flex-col justify-end text-white">
+                      <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#C9A66B] truncate">{memory.title}</span>
+                      <span className="text-[9px] text-[#454A46] mt-0.5">
                         {new Date(memory.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short' })}
                       </span>
                     </div>
@@ -468,7 +468,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                     {/* Media count overlay badge */}
                     {memory.media.length > 1 && (
                       <div className="absolute top-2 right-2 flex gap-1">
-                        <span className="px-1.5 py-0.5 bg-slate-955/80 border border-slate-700 text-slate-200 text-[9px] rounded-md flex items-center justify-center font-bold">
+                        <span className="px-1.5 py-0.5 bg-[#141A16]/80 border border-[rgba(252,251,247,0.25)] text-[#FCFBF7] text-[9px] rounded-[16px] flex items-center justify-center font-bold">
                           +{memory.media.length - 1}
                         </span>
                       </div>
@@ -476,19 +476,19 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                   </>
                 ) : (
                   /* Compact Text Memoir Card */
-                  <div className="p-4 w-full h-full flex flex-col justify-between bg-slate-800/40 hover:bg-slate-800 transition-colors">
+                  <div className="p-4 w-full h-full flex flex-col justify-between bg-[#EFE9DD] hover:bg-[#F1EFEC] transition-colors">
                     <div className="space-y-1.5 overflow-hidden">
-                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <Calendar className="w-2.5 h-2.5 text-amber-500" />
+                      <span className="text-[8px] text-[#8A8F8B] font-medium uppercase tracking-[0.12em] flex items-center gap-1">
+                        <Calendar className="w-2.5 h-2.5 text-[#C9A66B]" />
                         {new Date(memory.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short' })}
                       </span>
                       <h4 className="font-serif italic text-sm text-white line-clamp-2 leading-tight">{memory.title}</h4>
-                      <p className="text-[10px] text-slate-400 line-clamp-3 leading-relaxed font-sans">{memory.description}</p>
+                      <p className="text-[10px] text-[#8A8F8B] line-clamp-3 leading-relaxed font-sans">{memory.description}</p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-700/60 flex justify-between items-center text-[9px]">
-                      <span className="text-amber-450 font-bold uppercase tracking-wider">Read Memoir</span>
-                      <BookOpen className="w-3.5 h-3.5 text-amber-500" />
+                    <div className="pt-2 border-t border-[#E5E5E1]/60 flex justify-between items-center text-[9px]">
+                      <span className="text-[#C9A66B] font-medium uppercase tracking-[0.12em]">Read Memoir</span>
+                      <BookOpen className="w-3.5 h-3.5 text-[#C9A66B]" />
                     </div>
                   </div>
                 )}
@@ -500,36 +500,36 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
 
       {/* CRUD / Upload Form Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 bg-slate-905/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl max-w-xl w-full max-h-[90vh] overflow-y-auto flex flex-col text-slate-100 shadow-2xl">
-            <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900">
-              <h3 className="font-serif italic text-xl text-white">
+        <div className="fixed inset-0 bg-[#141A16]/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
+          <div className="bg-[#FCFBF7] border border-[#E5E5E1] rounded-[32px] max-w-xl w-full max-h-[90vh] overflow-y-auto flex flex-col text-[#1E2521] shadow-2xl">
+            <div className="p-6 border-b border-[#E5E5E1] flex justify-between items-center bg-[#F1EFEC]">
+              <h3 className="font-serif italic text-xl text-[#1E2521]">
                 {editingMemory ? "Edit Memory Entry" : "Record New Life Memory"}
               </h3>
-              <button onClick={() => setIsFormOpen(false)} className="p-1 text-slate-400 hover:text-white cursor-pointer transition-colors">
+              <button onClick={() => setIsFormOpen(false)} className="p-1 text-[#8A8F8B] hover:text-[#1E2521] cursor-pointer transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 flex-1 bg-slate-800">
+            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 flex-1 bg-[#FCFBF7]">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Memory Title</label>
+                <label className="text-xs font-semibold text-[#454A46] uppercase tracking-wider">Memory Title</label>
                 <input
                   type="text"
                   required
                   placeholder="E.g., Childhood summers at grandmother's barn"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-4 py-2 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[24px] text-[#1E2521] text-xs focus:outline-none focus:border-[#C9A66B] focus:ring-1 focus:ring-[#C9A66B]"
                 />
               </div>
 
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Detailed Description / Story</label>
+                  <label className="text-xs font-semibold text-[#454A46] uppercase tracking-wider">Detailed Description / Story</label>
                   {aiDescribing && (
-                    <span className="text-[10px] text-amber-400 font-bold animate-pulse flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 border border-amber-500/20 rounded-md">
-                      <Loader className="w-3 h-3 animate-spin text-amber-400" />
+                    <span className="text-[10px] text-[#C9A66B] font-bold animate-pulse flex items-center gap-1 bg-[#C9A66B]/10 px-2 py-0.5 border border-[#C9A66B]/20 rounded-[16px]">
+                      <Loader className="w-3 h-3 animate-spin text-[#C9A66B]" />
                       AI writing photo caption...
                     </span>
                   )}
@@ -540,60 +540,60 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                   placeholder="Record your thoughts, lessons, dialogues, and insights from this moment..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 leading-relaxed"
+                  className="w-full px-4 py-2 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[24px] text-[#1E2521] text-xs focus:outline-none focus:border-[#C9A66B] focus:ring-1 focus:ring-[#C9A66B] leading-relaxed"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Estimated Date</label>
+                  <label className="text-xs font-semibold text-[#454A46] uppercase tracking-wider">Estimated Date</label>
                   <input
                     type="date"
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-4 py-2 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[24px] text-[#1E2521] text-xs focus:outline-none focus:border-[#C9A66B] focus:ring-1 focus:ring-[#C9A66B]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Location / Venue</label>
+                  <label className="text-xs font-semibold text-[#454A46] uppercase tracking-wider">Location / Venue</label>
                   <input
                     type="text"
                     placeholder="E.g., Seattle, WA"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-4 py-2 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[24px] text-[#1E2521] text-xs focus:outline-none focus:border-[#C9A66B] focus:ring-1 focus:ring-[#C9A66B]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Tags (comma separated)</label>
+                <label className="text-xs font-semibold text-[#454A46] uppercase tracking-wider">Tags (comma separated)</label>
                 <input
                   type="text"
                   placeholder="childhood, travel, lessons, family"
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-4 py-2 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[24px] text-[#1E2521] text-xs focus:outline-none focus:border-[#C9A66B] focus:ring-1 focus:ring-[#C9A66B]"
                 />
               </div>
 
               {/* Media Upload Options */}
-              <div className="space-y-2 pt-2 border-t border-slate-750">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+              <div className="space-y-2 pt-2 border-t border-[#E5E5E1]">
+                <label className="text-xs font-semibold text-[#454A46] uppercase tracking-wider flex items-center justify-between">
                   <span>Attach Media Files</span>
-                  <span className="text-[10px] text-slate-400">Supports multi-photo, video, &amp; audio</span>
+                  <span className="text-[10px] text-[#8A8F8B]">Supports multi-photo, video, &amp; audio</span>
                 </label>
 
                 <div className="grid grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
-                    className="border border-slate-700 bg-slate-900 hover:bg-slate-800/80 p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all rounded-lg hover:border-amber-500/50"
+                    className="border border-[#E5E5E1] bg-[#F1EFEC] hover:bg-[#EFE9DD] p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all rounded-[24px] hover:border-[#C9A66B]/50"
                   >
-                    <Image className="w-5 h-5 text-amber-500 mb-1" />
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-200">Add Photo</span>
+                    <Image className="w-5 h-5 text-[#C9A66B] mb-1" />
+                    <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#1E2521]">Add Photo</span>
                   </button>
                   <input
                     type="file"
@@ -607,10 +607,10 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                   <button
                     type="button"
                     onClick={() => videoInputRef.current?.click()}
-                    className="border border-slate-700 bg-slate-900 hover:bg-slate-800/80 p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all rounded-lg hover:border-sky-500/50"
+                    className="border border-[#E5E5E1] bg-[#F1EFEC] hover:bg-[#EFE9DD] p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all rounded-[24px] hover:border-[#7E9B89]/50"
                   >
-                    <Video className="w-5 h-5 text-sky-400 mb-1" />
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-200">Add Video</span>
+                    <Video className="w-5 h-5 text-[#7E9B89] mb-1" />
+                    <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#1E2521]">Add Video</span>
                   </button>
                   <input
                     type="file"
@@ -624,10 +624,10 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                   <button
                     type="button"
                     onClick={() => audioInputRef.current?.click()}
-                    className="border border-slate-700 bg-slate-900 hover:bg-slate-800/80 p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all rounded-lg hover:border-emerald-500/50"
+                    className="border border-[#E5E5E1] bg-[#F1EFEC] hover:bg-[#EFE9DD] p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all rounded-[24px] hover:border-[#315C4A]/50"
                   >
-                    <Mic className="w-5 h-5 text-emerald-400 mb-1" />
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-200">Voice Record</span>
+                    <Mic className="w-5 h-5 text-[#4E7A64] mb-1" />
+                    <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#1E2521]">Voice Record</span>
                   </button>
                   <input
                     type="file"
@@ -641,12 +641,12 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
 
                 {uploading && (
                   <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-slate-200 font-bold uppercase">
+                    <div className="flex justify-between text-[10px] text-[#1E2521] font-medium uppercase">
                       <span>Uploading to secure media servers...</span>
-                      <span className="text-amber-400">{uploadProgress}%</span>
+                      <span className="text-[#C9A66B]">{uploadProgress}%</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress || 10}%` }}></div>
+                    <div className="w-full h-1.5 bg-[#F1EFEC] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#C9A66B] rounded-full transition-all duration-300" style={{ width: `${uploadProgress || 10}%` }}></div>
                     </div>
                   </div>
                 )}
@@ -655,17 +655,17 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                 {mediaFiles.length > 0 && (
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {mediaFiles.map(file => (
-                      <div key={file.id} className="relative p-2 border border-slate-700 rounded-lg bg-slate-900 flex items-center justify-between text-xs">
+                      <div key={file.id} className="relative p-2 border border-[#E5E5E1] rounded-[24px] bg-[#F1EFEC] flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2 overflow-hidden">
-                          {file.type === "image" && <Image className="w-4 h-4 text-amber-500 flex-shrink-0" />}
-                          {file.type === "video" && <Video className="w-4 h-4 text-sky-400 flex-shrink-0" />}
-                          {file.type === "audio" && <Mic className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
-                          <span className="truncate text-[11px] text-slate-200 font-medium pr-4">{file.name}</span>
+                          {file.type === "image" && <Image className="w-4 h-4 text-[#C9A66B] flex-shrink-0" />}
+                          {file.type === "video" && <Video className="w-4 h-4 text-[#7E9B89] flex-shrink-0" />}
+                          {file.type === "audio" && <Mic className="w-4 h-4 text-[#4E7A64] flex-shrink-0" />}
+                          <span className="truncate text-[11px] text-[#1E2521] font-medium pr-4">{file.name}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveMedia(file.id)}
-                          className="text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                          className="text-[#8A8F8B] hover:text-[#B4543E] transition-colors cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -675,17 +675,17 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                 )}
               </div>
 
-              <div className="pt-4 border-t border-slate-700 flex justify-end gap-3 bg-slate-900 -mx-6 -mb-6 p-6 rounded-b-xl">
+              <div className="pt-4 border-t border-[#E5E5E1] flex justify-end gap-3 bg-[#F1EFEC] -mx-6 -mb-6 p-6 rounded-b-xl">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
+                  className="px-4 py-2 border border-[#E5E5E1] bg-[#FCFBF7] hover:bg-[#EFE9DD] text-[#454A46] hover:text-[#1E2521] rounded-[24px] text-xs font-medium uppercase tracking-[0.12em] cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer flex items-center gap-1 transition-colors shadow-md shadow-amber-500/10 font-bold"
+                  className="px-6 py-2.5 bg-[#C9A66B] hover:bg-[#B08F55] text-[#1E2521] rounded-[24px] text-xs font-medium uppercase tracking-[0.12em] cursor-pointer flex items-center gap-1 transition-colors shadow-md shadow-[#C9A66B]/10 font-bold"
                 >
                   Save Entry
                 </button>
@@ -703,11 +703,11 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
         >
           {/* Main Container */}
           <div 
-            className="bg-slate-800 border border-slate-700 rounded-2xl max-w-6xl w-full max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col md:flex-row shadow-2xl relative"
+            className="bg-[#2A322C] border border-[rgba(252,251,247,0.14)] rounded-[24px] max-w-6xl w-full max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col md:flex-row shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Left Pane - Interactive Media Viewer */}
-            <div className="flex-1 bg-slate-950 flex flex-col justify-between relative p-4 border-b md:border-b-0 md:border-r border-slate-700 min-h-[320px] md:min-h-[520px]">
+            <div className="flex-1 bg-[#141A16] flex flex-col justify-between relative p-4 border-b md:border-b-0 md:border-r border-[rgba(252,251,247,0.14)] min-h-[320px] md:min-h-[520px]">
               
               {/* Main Media display area */}
               <div className="flex-1 flex items-center justify-center relative w-full h-[240px] md:h-auto min-h-0">
@@ -721,7 +721,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                             key={activeFile.id}
                             src={activeFile.url} 
                             alt={activeFile.name} 
-                            className="max-h-[42vh] md:max-h-[62vh] w-auto max-w-full object-contain rounded-lg shadow-xl animate-fade-in"
+                            className="max-h-[42vh] md:max-h-[62vh] w-auto max-w-full object-contain rounded-[24px] shadow-xl animate-fade-in"
                           />
                         )}
                         {activeFile.type === "video" && (
@@ -729,15 +729,15 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                             key={activeFile.id}
                             src={activeFile.url} 
                             controls 
-                            className="max-h-[42vh] md:max-h-[62vh] w-full rounded-lg shadow-xl animate-fade-in"
+                            className="max-h-[42vh] md:max-h-[62vh] w-full rounded-[24px] shadow-xl animate-fade-in"
                           />
                         )}
                         {activeFile.type === "audio" && (
-                          <div key={activeFile.id} className="w-full max-w-md p-6 flex flex-col items-center justify-center bg-slate-900/80 rounded-xl border border-slate-700 animate-fade-in">
-                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-emerald-400 mb-4 border border-slate-700 shadow-md">
+                          <div key={activeFile.id} className="w-full max-w-md p-6 flex flex-col items-center justify-center bg-[#1E2521]/80 rounded-[32px] border border-[rgba(252,251,247,0.14)] animate-fade-in">
+                            <div className="w-16 h-16 bg-[#2A322C] rounded-full flex items-center justify-center text-[#4E7A64] mb-4 border border-[rgba(252,251,247,0.14)] shadow-md">
                               <Mic className="w-8 h-8 animate-pulse" />
                             </div>
-                            <span className="text-xs text-slate-300 font-medium mb-3 truncate max-w-xs">{activeFile.name}</span>
+                            <span className="text-xs text-[#C9C7C0] font-medium mb-3 truncate max-w-xs">{activeFile.name}</span>
                             <audio src={activeFile.url} controls className="w-full" />
                           </div>
                         )}
@@ -747,11 +747,11 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                 ) : (
                   /* Fallback for text memories */
                   <div className="text-center p-8 flex flex-col items-center">
-                    <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center text-slate-500 mb-4 border border-slate-700 shadow-inner">
-                      <BookOpen className="w-10 h-10 text-amber-500/80" />
+                    <div className="w-20 h-20 bg-[#1E2521] rounded-full flex items-center justify-center text-[#8A8F8B] mb-4 border border-[rgba(252,251,247,0.14)] shadow-inner">
+                      <BookOpen className="w-10 h-10 text-[#C9A66B]/80" />
                     </div>
                     <h5 className="font-serif italic text-lg text-white">Written Capsule</h5>
-                    <p className="text-xs text-slate-400 max-w-xs mt-1">This memory contains a written narrative and details, but no visual attachments.</p>
+                    <p className="text-xs text-[#8A8F8B] max-w-xs mt-1">This memory contains a written narrative and details, but no visual attachments.</p>
                   </div>
                 )}
 
@@ -760,14 +760,14 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                   <>
                     <button
                       onClick={handlePrevMedia}
-                      className="absolute left-1 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-white bg-slate-900/70 hover:bg-slate-900 border border-slate-700/50 hover:scale-105 rounded-full transition-all cursor-pointer shadow-md"
+                      className="absolute left-1 top-1/2 -translate-y-1/2 p-2 text-[#C9C7C0] hover:text-white bg-[#1E2521]/70 hover:bg-[#1E2521] border border-[rgba(252,251,247,0.10)] hover:scale-105 rounded-full transition-all cursor-pointer shadow-md"
                       title="Previous Media"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={handleNextMedia}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-white bg-slate-900/70 hover:bg-slate-900 border border-slate-700/50 hover:scale-105 rounded-full transition-all cursor-pointer shadow-md"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-[#C9C7C0] hover:text-white bg-[#1E2521]/70 hover:bg-[#1E2521] border border-[rgba(252,251,247,0.10)] hover:scale-105 rounded-full transition-all cursor-pointer shadow-md"
                       title="Next Media"
                     >
                       <ChevronRight className="w-5 h-5" />
@@ -778,13 +778,13 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
 
               {/* Bottom Thumbnail Selector and Counter */}
               {viewingMemory.media.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-slate-700/60 flex flex-col gap-2">
-                  <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-slate-400 px-1">
+                <div className="mt-4 pt-3 border-t border-[rgba(252,251,247,0.14)]/60 flex flex-col gap-2">
+                  <div className="flex justify-between items-center text-[10px] uppercase font-medium tracking-wider text-[#8A8F8B] px-1">
                     <span className="flex items-center gap-1">
-                      <Image className="w-3.5 h-3.5 text-amber-500" />
+                      <Image className="w-3.5 h-3.5 text-[#C9A66B]" />
                       <span>Media file {activeMediaIndex + 1} of {viewingMemory.media.length}</span>
                     </span>
-                    <span className="text-slate-500 font-mono">
+                    <span className="text-[#8A8F8B] font-mono">
                       {viewingMemory.media[activeMediaIndex]?.type}
                     </span>
                   </div>
@@ -796,20 +796,20 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                         <div
                           key={file.id}
                           onClick={() => setActiveMediaIndex(idx)}
-                          className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
-                            idx === activeMediaIndex ? 'border-amber-500 scale-105 shadow-md shadow-amber-500/10' : 'border-slate-750 hover:border-slate-500'
+                          className={`flex-shrink-0 w-12 h-12 rounded-[24px] overflow-hidden border-2 cursor-pointer transition-all ${
+                            idx === activeMediaIndex ? 'border-[#C9A66B] scale-105 shadow-md shadow-[#C9A66B]/10' : 'border-[rgba(252,251,247,0.12)] hover:border-[rgba(252,251,247,0.20)]'
                           }`}
                         >
                           {file.type === "image" && (
                             <img src={file.url} alt="" className="w-full h-full object-cover" />
                           )}
                           {file.type === "video" && (
-                            <div className="w-full h-full bg-slate-900 flex items-center justify-center text-sky-400">
+                            <div className="w-full h-full bg-[#1E2521] flex items-center justify-center text-[#7E9B89]">
                               <Film className="w-5 h-5" />
                             </div>
                           )}
                           {file.type === "audio" && (
-                            <div className="w-full h-full bg-slate-900 flex items-center justify-center text-emerald-400">
+                            <div className="w-full h-full bg-[#1E2521] flex items-center justify-center text-[#4E7A64]">
                               <Mic className="w-5 h-5" />
                             </div>
                           )}
@@ -823,35 +823,35 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
             </div>
 
             {/* Right Pane - Memory Metadata, Narrative, & Actions */}
-            <div className="w-full md:w-80 lg:w-96 bg-slate-900/60 p-6 flex flex-col justify-between overflow-y-auto max-h-[45vh] md:max-h-full space-y-6">
+            <div className="w-full md:w-80 lg:w-96 bg-[#1E2521]/60 p-6 flex flex-col justify-between overflow-y-auto max-h-[45vh] md:max-h-full space-y-6">
               
               <div className="space-y-4">
                 {/* Top Navigation Back Button */}
                 <button
                   onClick={() => setViewingMemory(null)}
-                  className="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full py-2 px-3 bg-[#2A322C] hover:bg-[#3A443D] text-[#E8E6DF] border border-[rgba(252,251,247,0.14)] hover:border-[rgba(252,251,247,0.16)] text-xs font-medium uppercase tracking-[0.12em] rounded-[24px] flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
-                  <ChevronLeft className="w-4 h-4 text-amber-500" />
+                  <ChevronLeft className="w-4 h-4 text-[#C9A66B]" />
                   <span>Back to Grid</span>
                 </button>
 
                 {/* Section Header */}
                 <div>
-                  <span className="text-[10px] text-amber-450 font-bold uppercase tracking-wider block border-b border-amber-500/20 pb-1 mb-2">Memory Capsule details</span>
-                  <h3 className="font-serif italic text-3xl text-white mt-1 leading-snug tracking-tight font-semibold hover:text-amber-350 transition-colors">{viewingMemory.title}</h3>
+                  <span className="text-[10px] text-[#C9A66B] font-medium uppercase tracking-[0.12em] block border-b border-[#C9A66B]/20 pb-1 mb-2">Memory Capsule details</span>
+                  <h3 className="font-serif italic text-3xl text-white mt-1 leading-snug tracking-tight font-semibold hover:text-[#C9A66B] transition-colors">{viewingMemory.title}</h3>
                 </div>
 
                 {/* Date & Location Card */}
-                <div className="p-4 bg-slate-850 border border-slate-700/80 rounded-xl space-y-2.5 shadow-inner">
-                  <div className="flex items-center gap-2.5 text-xs text-slate-200">
-                    <Calendar className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <div className="p-4 bg-[#2A322C] border border-[rgba(252,251,247,0.14)]/80 rounded-[32px] space-y-2.5 shadow-inner">
+                  <div className="flex items-center gap-2.5 text-xs text-[#E8E6DF]">
+                    <Calendar className="w-4 h-4 text-[#C9A66B] flex-shrink-0" />
                     <span className="font-medium">
                       {new Date(viewingMemory.date).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}
                     </span>
                   </div>
                   {viewingMemory.location && (
-                    <div className="flex items-center gap-2.5 text-xs text-slate-200">
-                      <MapPin className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                    <div className="flex items-center gap-2.5 text-xs text-[#E8E6DF]">
+                      <MapPin className="w-4 h-4 text-[#C9A66B] flex-shrink-0" />
                       <span className="truncate">{viewingMemory.location}</span>
                     </div>
                   )}
@@ -859,11 +859,11 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
 
                 {/* The Written Narrative / Story */}
                 <div className="space-y-1.5">
-                  <h5 className="text-[10px] uppercase font-bold tracking-widest text-slate-400 flex items-center gap-1">
-                    <BookOpen className="w-3.5 h-3.5 text-amber-500/80" />
+                  <h5 className="text-[10px] uppercase font-medium tracking-widest text-[#8A8F8B] flex items-center gap-1">
+                    <BookOpen className="w-3.5 h-3.5 text-[#C9A66B]/80" />
                     <span>The Story</span>
                   </h5>
-                  <div className="text-[13px] text-slate-200 leading-relaxed max-h-[160px] md:max-h-[240px] overflow-y-auto pr-2 font-sans whitespace-pre-line bg-slate-900/90 p-4 border border-slate-700 rounded-xl scrollbar-thin">
+                  <div className="text-[13px] text-[#E8E6DF] leading-relaxed max-h-[160px] md:max-h-[240px] overflow-y-auto pr-2 font-sans whitespace-pre-line bg-[#1E2521]/90 p-4 border border-[rgba(252,251,247,0.14)] rounded-[32px] scrollbar-thin">
                     {viewingMemory.description}
                   </div>
                 </div>
@@ -872,7 +872,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                 {viewingMemory.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {viewingMemory.tags.map(t => (
-                      <span key={t} className="text-[10px] font-bold px-2.5 py-1 bg-amber-500/10 text-amber-450 border border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/20 transition-all rounded-lg">
+                      <span key={t} className="text-[10px] font-bold px-2.5 py-1 bg-[#C9A66B]/10 text-[#C9A66B] border border-[#C9A66B]/20 hover:border-[#C9A66B]/40 hover:bg-[#C9A66B]/20 transition-all rounded-[24px]">
                         #{t}
                       </span>
                     ))}
@@ -881,7 +881,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
               </div>
 
               {/* Bottom Actions toolbar */}
-              <div className="pt-4 border-t border-slate-700/60 flex flex-col gap-2">
+              <div className="pt-4 border-t border-[rgba(252,251,247,0.14)]/60 flex flex-col gap-2">
                 
                 {/* Download Active Media File if exists */}
                 {viewingMemory.media.length > 0 && viewingMemory.media[activeMediaIndex] && (
@@ -890,7 +890,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                     download={viewingMemory.media[activeMediaIndex].name || `media_${viewingMemory.id}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full py-2.5 px-3 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer text-center shadow-md shadow-amber-500/10 font-bold"
+                    className="w-full py-2.5 px-3 bg-[#C9A66B] hover:bg-[#B08F55] text-[#1E2521] text-xs font-medium uppercase tracking-[0.12em] rounded-[24px] flex items-center justify-center gap-2 transition-colors cursor-pointer text-center shadow-md shadow-[#C9A66B]/10 font-bold"
                   >
                     <Download className="w-3.5 h-3.5 font-bold" />
                     <span>Download {viewingMemory.media[activeMediaIndex].type}</span>
@@ -906,7 +906,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                         setViewingMemory(null);
                         handleOpenEditForm(m);
                       }}
-                      className="flex-1 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-650 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer font-bold"
+                      className="flex-1 py-2.5 px-3 bg-[#2A322C] hover:bg-[#3A443D] text-[#E8E6DF] border border-[rgba(252,251,247,0.14)] hover:border-[rgba(252,251,247,0.16)] text-xs font-medium uppercase tracking-[0.12em] rounded-[24px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer font-bold"
                     >
                       <Edit className="w-3.5 h-3.5" />
                       <span>Edit</span>
@@ -917,7 +917,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                         setViewingMemory(null);
                         handleDeleteMemory(id);
                       }}
-                      className="flex-1 py-2.5 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer font-bold"
+                      className="flex-1 py-2.5 px-3 bg-[#C9826B]/10 hover:bg-[#C9826B]/20 text-[#B4543E] border border-[#C9826B]/25 text-xs font-medium uppercase tracking-[0.12em] rounded-[24px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer font-bold"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Delete</span>
@@ -928,9 +928,9 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                 {/* Explicit Back to Grid button */}
                 <button
                   onClick={() => setViewingMemory(null)}
-                  className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 hover:border-slate-600 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full py-2.5 px-3 bg-[#2A322C] hover:bg-[#2A322C] text-[#E8E6DF] border border-[rgba(252,251,247,0.14)] hover:border-[rgba(252,251,247,0.16)] text-xs font-medium uppercase tracking-[0.12em] rounded-[24px] flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
-                  <ChevronLeft className="w-4 h-4 text-amber-500" />
+                  <ChevronLeft className="w-4 h-4 text-[#C9A66B]" />
                   <span>Back to Grid</span>
                 </button>
               </div>
@@ -940,7 +940,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
             {/* Close Button on top right of the whole modal - Positioned at end of HTML structure to naturally stack on top */}
             <button 
               onClick={() => setViewingMemory(null)}
-              className="absolute top-4 right-4 z-50 p-2 text-slate-400 hover:text-white bg-slate-900/80 hover:bg-slate-900 border border-slate-700/50 rounded-full transition-all cursor-pointer shadow-md"
+              className="absolute top-4 right-4 z-50 p-2 text-[#8A8F8B] hover:text-white bg-[#1E2521]/80 hover:bg-[#1E2521] border border-[rgba(252,251,247,0.10)] rounded-full transition-all cursor-pointer shadow-md"
               title="Close Details (Esc)"
             >
               <X className="w-5 h-5" />

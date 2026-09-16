@@ -11,6 +11,7 @@
     "clean": "node -e \"const fs = require('fs'); ['dist', 'db.json'].forEach(p => fs.rmSync(p, {recursive: true, force: true}))\"",
     "lint": "tsc --noEmit",
     "test": "node scripts/test-ts.cjs",
+    "test:browser": "node test/browser-qa.mjs",
     "audit:secrets": "node scripts/scan-secrets.cjs"
   },
   "dependencies": {

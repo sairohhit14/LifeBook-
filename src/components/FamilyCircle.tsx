@@ -41,7 +41,7 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
       const data = await api.getFamily();
       setMembers(data);
     } catch (err: any) {
-      setError(err.message || "Failed to load family circle");
+      setError(err.message || "We couldn't open your family circle. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
       const result = await api.uploadFile(file.name, base64Data, "image");
       setProfilePhoto(result.url);
     } catch (err: any) {
-      setError("Failed to upload portrait: " + err.message);
+      setError("We couldn't upload that photo. " + err.message);
     } finally {
       setUploading(false);
     }
@@ -123,7 +123,7 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
       fetchFamily();
       onFamilyChanged();
     } catch (err: any) {
-      setError(err.message || "Failed to add family member");
+      setError(err.message || "We couldn't add that family member. Please check the details and try again.");
     }
   };
 
@@ -134,7 +134,7 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
       fetchFamily();
       onFamilyChanged();
     } catch (err: any) {
-      setError(err.message || "Failed to remove family member");
+      setError(err.message || "We couldn't remove that family member. Please try again.");
     }
   };
 
@@ -160,17 +160,17 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
     <div id="family-root" className="space-y-8 animate-fade-in font-sans">
       <div id="family-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#E5E5E1]">
         <div>
-          <h2 className="text-3xl font-serif italic text-[#1A1A1A] flex items-center gap-2" style={{ fontFamily: "Georgia, serif" }}>
+          <h2 className="text-3xl font-serif italic text-[#1A1A1A] flex items-center gap-2">
             <Users className="w-6 h-6 text-[#1A1A1A]" />
             <span>Family Circle &amp; Legacy Tree</span>
           </h2>
-          <p className="text-[#1A1A1A]/70 text-xs">Maintain communication contacts, grant viewing capabilities, and automatically generate family charts.</p>
+          <p className="text-[#454A46] text-xs">Maintain communication contacts, grant viewing capabilities, and automatically generate family charts.</p>
         </div>
         {!guestMode && (
           <button
             id="add-relative-btn"
             onClick={handleOpenCreateForm}
-            className="px-4 py-2.5 bg-[#1A1A1A] hover:bg-[#1A1A1A]/90 text-white text-xs font-bold uppercase tracking-wider rounded-none flex items-center gap-2 transition-colors cursor-pointer"
+            className="px-4 py-2.5 bg-[#315C4A] hover:bg-[#27493A] text-white text-xs font-medium uppercase tracking-[0.12em] rounded-[16px] flex items-center gap-2 transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Relative</span>
@@ -179,33 +179,33 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-none text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-700 flex-shrink-0" />
+        <div className="p-3 bg-[#F9EFEB] border border-[#E8CDC4] text-[#B4543E] rounded-[16px] text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-[#B4543E] flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {showInvitationToast && (
-        <div className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] text-[#1A1A1A] rounded-none text-xs flex items-center gap-2 font-serif italic">
+        <div className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] text-[#1A1A1A] rounded-[16px] text-xs flex items-center gap-2 font-serif italic">
           <span>✓ Invitation message and access link copied to your clipboard! Send it to your relative.</span>
         </div>
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 text-[#1A1A1A]/70 gap-3">
+        <div className="flex flex-col items-center justify-center py-24 text-[#454A46] gap-3">
           <Loader className="w-8 h-8 animate-spin text-[#1A1A1A]" />
           <span className="text-xs font-semibold uppercase tracking-wider">Generating relationship chart...</span>
         </div>
       ) : (
         <div className="space-y-8">
           {/* Visual Nodes-Based Family Tree Section */}
-          <div id="visual-family-tree" className="p-6 rounded-none bg-white border border-[#E5E5E1] space-y-6 shadow-sm">
+          <div id="visual-family-tree" className="p-6 rounded-[16px] bg-white border border-[#E5E5E1] space-y-6 shadow-sm">
             <div className="flex justify-between items-center">
-              <h3 className="font-serif italic text-lg text-[#1A1A1A] flex items-center gap-2" style={{ fontFamily: "Georgia, serif" }}>
+              <h3 className="font-serif italic text-lg text-[#1A1A1A] flex items-center gap-2">
                 <GitBranch className="w-5 h-5 text-[#1A1A1A]" />
                 <span>Automatic Legacy Pedigree</span>
               </h3>
-              <span className="text-[9px] text-[#1A1A1A]/50 font-bold uppercase tracking-wider font-mono">Dynamic Generation Chart</span>
+              <span className="text-[9px] text-[#8A8F8B] font-medium uppercase tracking-[0.12em] font-mono">Dynamic Generation Chart</span>
             </div>
 
             <div className="flex flex-col items-center justify-center space-y-6 py-6 overflow-x-auto min-w-full">
@@ -214,13 +214,13 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
                 <div className="flex flex-col items-center">
                   <div className="flex gap-4">
                     {grandparents.map(gp => (
-                      <div key={gp.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-none flex items-center gap-3 w-44">
-                        <div className="w-8 h-8 rounded-none bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-bold uppercase">
-                          {gp.profilePhoto ? <img src={gp.profilePhoto} className="w-full h-full rounded-none object-cover" /> : gp.name[0]}
+                      <div key={gp.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
+                        <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
+                          {gp.profilePhoto ? <img src={gp.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : gp.name[0]}
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-[#1A1A1A] truncate max-w-[120px]">{gp.name}</p>
-                          <p className="text-[10px] text-[#1A1A1A]/60 font-mono uppercase tracking-wider">{gp.relationship}</p>
+                          <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{gp.name}</p>
+                          <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{gp.relationship}</p>
                         </div>
                       </div>
                     ))}
@@ -234,13 +234,13 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
                 <div className="flex flex-col items-center">
                   <div className="flex gap-4">
                     {parents.map(p => (
-                      <div key={p.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-none flex items-center gap-3 w-44">
-                        <div className="w-8 h-8 rounded-none bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-bold uppercase">
-                          {p.profilePhoto ? <img src={p.profilePhoto} className="w-full h-full rounded-none object-cover" /> : p.name[0]}
+                      <div key={p.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
+                        <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
+                          {p.profilePhoto ? <img src={p.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : p.name[0]}
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-[#1A1A1A] truncate max-w-[120px]">{p.name}</p>
-                          <p className="text-[10px] text-[#1A1A1A]/60 font-mono uppercase tracking-wider">{p.relationship}</p>
+                          <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{p.name}</p>
+                          <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{p.relationship}</p>
                         </div>
                       </div>
                     ))}
@@ -255,38 +255,38 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
                 {(parents.length > 0 || grandparents.length > 0) && <div className="w-[1px] h-2 bg-[#E5E5E1]"></div>}
                 <div className="flex flex-wrap justify-center gap-4">
                   {/* Me Node */}
-                  <div className="p-3 bg-[#1A1A1A] border border-[#1A1A1A] rounded-none flex items-center gap-3 w-44 text-white">
-                    <div className="w-8 h-8 rounded-none bg-white text-[#1A1A1A] flex items-center justify-center text-xs font-bold">
+                  <div className="p-3 bg-[#315C4A] border border-[#315C4A] rounded-[16px] flex items-center gap-3 w-44 text-white">
+                    <div className="w-8 h-8 rounded-[16px] bg-white text-[#1A1A1A] flex items-center justify-center text-xs font-semibold">
                       ME
                     </div>
                     <div>
-                      <p className="text-xs font-bold">Owner Account</p>
+                      <p className="text-xs font-semibold">Owner Account</p>
                       <p className="text-[10px] text-white/70 uppercase tracking-wider font-mono">Biography Core</p>
                     </div>
                   </div>
 
                   {/* Spouses */}
                   {spouses.map(s => (
-                    <div key={s.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-none flex items-center gap-3 w-44">
-                      <div className="w-8 h-8 rounded-none bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-bold uppercase">
-                        {s.profilePhoto ? <img src={s.profilePhoto} className="w-full h-full rounded-none object-cover" /> : s.name[0]}
+                    <div key={s.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
+                      <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
+                        {s.profilePhoto ? <img src={s.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : s.name[0]}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-[#1A1A1A] truncate max-w-[120px]">{s.name}</p>
-                        <p className="text-[10px] text-[#1A1A1A]/60 font-mono uppercase tracking-wider">{s.relationship}</p>
+                        <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{s.name}</p>
+                        <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{s.relationship}</p>
                       </div>
                     </div>
                   ))}
 
                   {/* Siblings */}
                   {siblings.map(sib => (
-                    <div key={sib.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-none flex items-center gap-3 w-44">
-                      <div className="w-8 h-8 rounded-none bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-bold uppercase">
-                        {sib.profilePhoto ? <img src={sib.profilePhoto} className="w-full h-full rounded-none object-cover" /> : sib.name[0]}
+                    <div key={sib.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
+                      <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
+                        {sib.profilePhoto ? <img src={sib.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : sib.name[0]}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-[#1A1A1A] truncate max-w-[120px]">{sib.name}</p>
-                        <p className="text-[10px] text-[#1A1A1A]/60 font-mono uppercase tracking-wider">{sib.relationship}</p>
+                        <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{sib.name}</p>
+                        <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{sib.relationship}</p>
                       </div>
                     </div>
                   ))}
@@ -304,13 +304,13 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
                 <div className="flex flex-col items-center">
                   <div className="flex gap-4">
                     {children.map(c => (
-                      <div key={c.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-none flex items-center gap-3 w-44">
-                        <div className="w-8 h-8 rounded-none bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-bold uppercase">
-                          {c.profilePhoto ? <img src={c.profilePhoto} className="w-full h-full rounded-none object-cover" /> : c.name[0]}
+                      <div key={c.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
+                        <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
+                          {c.profilePhoto ? <img src={c.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : c.name[0]}
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-[#1A1A1A] truncate max-w-[120px]">{c.name}</p>
-                          <p className="text-[10px] text-[#1A1A1A]/60 font-mono uppercase tracking-wider">{c.relationship}</p>
+                          <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{c.name}</p>
+                          <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{c.relationship}</p>
                         </div>
                       </div>
                     ))}
@@ -328,13 +328,13 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
               {grandchildren.length > 0 && (
                 <div className="flex gap-4">
                   {grandchildren.map(gc => (
-                    <div key={gc.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-none flex items-center gap-3 w-44">
-                      <div className="w-8 h-8 rounded-none bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-bold uppercase">
-                        {gc.profilePhoto ? <img src={gc.profilePhoto} className="w-full h-full rounded-none object-cover" /> : gc.name[0]}
+                    <div key={gc.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
+                      <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
+                        {gc.profilePhoto ? <img src={gc.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : gc.name[0]}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-[#1A1A1A] truncate max-w-[120px]">{gc.name}</p>
-                        <p className="text-[10px] text-[#1A1A1A]/60 font-mono uppercase tracking-wider">{gc.relationship}</p>
+                        <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{gc.name}</p>
+                        <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{gc.relationship}</p>
                       </div>
                     </div>
                   ))}
@@ -344,16 +344,16 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
               {/* Extended Family & Circle */}
               {others.length > 0 && (
                 <div className="flex flex-col items-center pt-2">
-                  <span className="text-[9px] text-[#1A1A1A]/50 font-bold uppercase tracking-wider font-mono mb-2">Extended Family &amp; Circle</span>
+                  <span className="text-[9px] text-[#8A8F8B] font-medium uppercase tracking-[0.12em] font-mono mb-2">Extended Family &amp; Circle</span>
                   <div className="flex flex-wrap justify-center gap-4">
                     {others.map(o => (
-                      <div key={o.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-none flex items-center gap-3 w-44">
-                        <div className="w-8 h-8 rounded-none bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-bold uppercase">
-                          {o.profilePhoto ? <img src={o.profilePhoto} className="w-full h-full rounded-none object-cover" /> : o.name[0]}
+                      <div key={o.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
+                        <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
+                          {o.profilePhoto ? <img src={o.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : o.name[0]}
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-[#1A1A1A] truncate max-w-[120px]">{o.name}</p>
-                          <p className="text-[10px] text-[#1A1A1A]/60 font-mono uppercase tracking-wider">{o.relationship}</p>
+                          <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{o.name}</p>
+                          <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{o.relationship}</p>
                         </div>
                       </div>
                     ))}
@@ -365,58 +365,58 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
 
           {/* Members List Grid */}
           <div className="space-y-4">
-            <h3 className="font-serif italic text-xl text-[#1A1A1A]" style={{ fontFamily: "Georgia, serif" }}>Circle Members Directory ({members.length})</h3>
+            <h3 className="font-serif italic text-xl text-[#1A1A1A]">Circle Members Directory ({members.length})</h3>
 
             {members.length === 0 ? (
-              <p className="text-xs text-[#1A1A1A]/60 font-sans">No registered family members. Add relatives and designate access permissions.</p>
+              <p className="text-xs text-[#454A46] font-sans">No registered family members. Add relatives and designate access permissions.</p>
             ) : (
               <div id="members-list-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {members.map(member => (
-                  <div key={member.id} className="p-5 rounded-none bg-white border border-[#E5E5E1] flex flex-col justify-between hover:border-[#1A1A1A] transition-all">
+                  <div key={member.id} className="p-5 rounded-[16px] bg-white border border-[#E5E5E1] flex flex-col justify-between hover:border-[#315C4A] transition-all">
                     <div className="space-y-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-none bg-[#F1EFEC] border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-sm font-bold uppercase">
+                        <div className="w-12 h-12 rounded-[16px] bg-[#F1EFEC] border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-sm font-semibold uppercase">
                           {member.profilePhoto ? (
-                            <img src={member.profilePhoto} alt={member.name} className="w-full h-full object-cover rounded-none" />
+                            <img src={member.profilePhoto} alt={member.name} className="w-full h-full object-cover rounded-[16px]" />
                           ) : member.name[0]}
                         </div>
                         <div>
-                          <h4 className="font-serif italic text-lg text-[#1A1A1A]" style={{ fontFamily: "Georgia, serif" }}>{member.name}</h4>
-                          <span className="text-[9px] px-2 py-0.5 bg-[#F1EFEC] text-[#1A1A1A] font-bold uppercase rounded-none border border-[#E5E5E1] font-mono tracking-wider">
+                          <h4 className="font-serif italic text-lg text-[#1A1A1A]">{member.name}</h4>
+                          <span className="text-[9px] px-2 py-0.5 bg-[#F1EFEC] text-[#1A1A1A] font-medium uppercase rounded-[16px] border border-[#E5E5E1] font-mono tracking-wider">
                             {member.relationship}
                           </span>
                         </div>
                       </div>
 
                       <div className="space-y-1.5 text-xs font-sans">
-                        <div className="flex items-center gap-2 text-[#1A1A1A]/80">
-                          <Mail className="w-3.5 h-3.5 text-[#1A1A1A]/50" />
+                        <div className="flex items-center gap-2 text-[#454A46]">
+                          <Mail className="w-3.5 h-3.5 text-[#8A8F8B]" />
                           <span className="truncate">{member.email}</span>
                         </div>
                         {member.phone && (
-                          <div className="flex items-center gap-2 text-[#1A1A1A]/80">
-                            <Phone className="w-3.5 h-3.5 text-[#1A1A1A]/50" />
+                          <div className="flex items-center gap-2 text-[#454A46]">
+                            <Phone className="w-3.5 h-3.5 text-[#8A8F8B]" />
                             <span>{member.phone}</span>
                           </div>
                         )}
                         {member.dob && (
-                          <div className="flex items-center gap-2 text-[#1A1A1A]/80">
-                            <Calendar className="w-3.5 h-3.5 text-[#1A1A1A]/50" />
+                          <div className="flex items-center gap-2 text-[#454A46]">
+                            <Calendar className="w-3.5 h-3.5 text-[#8A8F8B]" />
                             <span className="font-mono">DOB: {new Date(member.dob).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                           </div>
                         )}
                       </div>
 
-                      <div className="p-3 bg-[#F1EFEC] rounded-none border border-[#E5E5E1] text-xs flex justify-between items-center font-sans">
-                        <span className="text-[#1A1A1A]/60">Security Access Role:</span>
-                        <span className="font-bold text-[#1A1A1A] font-mono text-[9px] uppercase tracking-wider">{member.role}</span>
+                      <div className="p-3 bg-[#F1EFEC] rounded-[16px] border border-[#E5E5E1] text-xs flex justify-between items-center font-sans">
+                        <span className="text-[#454A46]">Security Access Role:</span>
+                        <span className="font-semibold text-[#1E2521] font-mono text-[9px] uppercase tracking-wider">{member.role}</span>
                       </div>
                     </div>
 
                     <div className="flex justify-between items-center mt-6 pt-4 border-t border-[#E5E5E1]">
                       <button
                         onClick={() => copyInvitationText(member)}
-                        className="text-xs text-[#1A1A1A] hover:underline font-bold uppercase tracking-wider text-[10px] flex items-center gap-1.5 cursor-pointer"
+                        className="text-xs text-[#1A1A1A] hover:underline font-medium uppercase tracking-[0.12em] text-[10px] flex items-center gap-1.5 cursor-pointer"
                       >
                         <Share2 className="w-3.5 h-3.5" />
                         <span>Invite relative</span>
@@ -426,13 +426,13 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
                         <div className="flex gap-2">
                           <button 
                             onClick={() => handleOpenEditForm(member)}
-                            className="p-1.5 hover:bg-[#F1EFEC] border border-transparent hover:border-[#E5E5E1] text-[#1A1A1A]/70 hover:text-[#1A1A1A] cursor-pointer"
+                            className="p-1.5 hover:bg-[#F1EFEC] border border-transparent hover:border-[#E5E5E1] text-[#454A46] hover:text-[#1A1A1A] cursor-pointer"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button 
                             onClick={() => handleDeleteMember(member.id)}
-                            className="p-1.5 hover:bg-red-50 border border-transparent hover:border-red-200 text-red-700 cursor-pointer"
+                            className="p-1.5 hover:bg-[#F9EFEB] border border-transparent hover:border-[#E8CDC4] text-[#B4543E] cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -450,36 +450,36 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
       {/* CRUD Relative Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in text-[#1A1A1A]">
-          <div className="bg-[#F9F7F2] border border-[#E5E5E1] rounded-none max-w-lg w-full max-h-[90vh] overflow-y-auto flex flex-col">
+          <div className="bg-[#F9F7F2] border border-[#E5E5E1] rounded-[16px] max-w-lg w-full max-h-[90vh] overflow-y-auto flex flex-col">
             <div className="p-6 border-b border-[#E5E5E1] flex justify-between items-center">
-              <h3 className="font-serif italic text-xl text-[#1A1A1A]" style={{ fontFamily: "Georgia, serif" }}>
+              <h3 className="font-serif italic text-xl text-[#1A1A1A]">
                 {editingMember ? "Edit Relative Information" : "Connect New Relative"}
               </h3>
-              <button onClick={() => setIsFormOpen(false)} className="p-1 text-[#1A1A1A]/60 hover:text-[#1A1A1A] rounded">
+              <button onClick={() => setIsFormOpen(false)} className="p-1 text-[#454A46] hover:text-[#1A1A1A] rounded-[10px]">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleFormSubmit} className="p-6 space-y-4 flex-1 font-sans">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Relative Name</label>
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Relative Name</label>
                 <input
                   type="text"
                   required
                   placeholder="E.g., Chloe Smith"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                  className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Relationship</label>
+                  <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Relationship</label>
                   <select
                     value={relationship}
                     onChange={(e) => setRelationship(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A] cursor-pointer font-bold uppercase tracking-wider text-[10px]"
+                    className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A] cursor-pointer font-medium uppercase tracking-[0.12em] text-[10px]"
                   >
                     <option value="Spouse">Spouse / Partner</option>
                     <option value="Child">Child (Son/Daughter)</option>
@@ -493,11 +493,11 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Access Security Role</label>
+                  <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Access Security Role</label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A] cursor-pointer font-bold uppercase tracking-wider text-[10px]"
+                    className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A] cursor-pointer font-medium uppercase tracking-[0.12em] text-[10px]"
                   >
                     <option value="Viewer">Viewer (Read-only memoirs)</option>
                     <option value="Contributor">Contributor (Can append memories)</option>
@@ -508,44 +508,44 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Email Address</label>
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Email Address</label>
                 <input
                   type="email"
                   required
                   placeholder="chloe@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                  className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Phone</label>
+                  <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Phone</label>
                   <input
                     type="tel"
                     placeholder="+1 (555) 000-0000"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                    className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Date of Birth</label>
+                  <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Date of Birth</label>
                   <input
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-none text-[#1A1A1A] text-xs focus:outline-none focus:border-[#1A1A1A]"
+                    className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1 pt-2">
-                <label className="text-[10px] font-bold text-[#1A1A1A]/70 uppercase tracking-wider">Upload Profile Photo</label>
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Upload Profile Photo</label>
                 <div className="flex items-center gap-3">
-                  <label className="border border-[#E5E5E1] bg-white hover:bg-[#F1EFEC] px-4 py-2.5 rounded-none flex items-center justify-center gap-2 cursor-pointer text-xs font-bold text-[#1A1A1A] transition-colors uppercase tracking-wider">
+                  <label className="border border-[#E5E5E1] bg-white hover:bg-[#F1EFEC] px-4 py-2.5 rounded-[16px] flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold text-[#1A1A1A] transition-colors uppercase tracking-wider">
                     <Plus className="w-4 h-4 text-[#1A1A1A]" />
                     <span>Upload Portrait</span>
                     <input
@@ -555,9 +555,9 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
                       onChange={handlePhotoUpload}
                     />
                   </label>
-                  {uploading && <span className="text-xs text-[#1A1A1A]/60 font-semibold animate-pulse">Saving...</span>}
+                  {uploading && <span className="text-xs text-[#454A46] font-semibold animate-pulse">Saving...</span>}
                   {profilePhoto && (
-                    <span className="text-[10px] text-green-700 max-w-xs truncate font-mono font-bold">✓ Portrait Uploaded</span>
+                    <span className="text-[10px] text-[#3D5F4C] max-w-xs truncate font-mono font-bold">✓ Portrait Uploaded</span>
                   )}
                 </div>
               </div>
@@ -566,13 +566,13 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2.5 border border-[#E5E5E1] hover:bg-[#F1EFEC] bg-white rounded-none text-[10px] font-bold uppercase tracking-wider cursor-pointer text-[#1A1A1A]"
+                  className="px-4 py-2.5 border border-[#E5E5E1] hover:bg-[#F1EFEC] bg-white rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] cursor-pointer text-[#1A1A1A]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#1A1A1A] hover:bg-[#1A1A1A]/90 text-white rounded-none text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                  className="px-5 py-2.5 bg-[#315C4A] hover:bg-[#27493A] text-white rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] cursor-pointer"
                 >
                   Add Relative
                 </button>
