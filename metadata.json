@@ -1,0 +1,6 @@
+{
+  "name": "LifeBook",
+  "description": "An AI-powered digital legacy platform to preserve memories, generate personal biography books, schedule messages, and build family trees.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Secret scan
+        run: node scripts/scan-secrets.cjs
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Node backend tests (race + sync checks)
+        run: node scripts/test-ts.cjs
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify build artifact
+        run: |
+          test -f dist/index.html || { echo "dist/index.html missing"; exit 1; }
+          test -d dist/assets || { echo "dist/assets missing"; exit 1; }
+          echo "Build artifact OK"

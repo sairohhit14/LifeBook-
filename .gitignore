@@ -1,0 +1,28 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+.env
+uploads/
+.firebase/
+.agents/
+skills-lock.json
+
+# Build outputs
+backend/target/
+
+# Shared JSON database (user data) + transient lock/tmp artifacts from write locking
+db.json
+db.json.lock
+db.json.tmp
+
+# JVM crash logs
+hs_err_pid*.log
+
+# Local tooling artifacts
+venv/
+.npm-cache/

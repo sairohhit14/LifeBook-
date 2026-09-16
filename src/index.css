@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-brand-bg: #0F172A;
+  --color-brand-text: #F1F5F9;
+  --color-brand-card: #1E293B;
+  --color-brand-border: #334155;
+  --color-brand-muted: #64748B;
+  --color-brand-beige: #1E293B;
+  --color-brand-dark: #0F172A;
+  --color-brand-light: #F1F5F9;
+  --color-brand-accent: #F59E0B;
+  --color-brand-accent-hover: #D97706;
+  --color-brand-success: #10B981;
+  --color-brand-danger: #EF4444;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+    
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+body {
+  background-color: #0F172A; /* brand-bg */
+  color: #F1F5F9; /* brand-text */
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Custom scrollbars matching the brand colors */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0F172A;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F59E0B;
+}
+
