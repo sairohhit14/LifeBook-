@@ -182,7 +182,7 @@ async function probeMemoryModal(p, tag) {
     if (!b) return false; b.click(); return true;
   })()`);
   if (!navOk) { critical(`${tag}: modal probe`, "could not navigate to Memories"); return; }
-  await sleep(700);
+  await sleep(1100);
   const opened = await evalJs(p, `(() => {
     const btn = [...document.querySelectorAll('button')].find(b => /First Memory/.test(b.textContent));
     if (!btn) return false; btn.click(); return true;
@@ -233,7 +233,7 @@ async function main() {
     const TABS = [
       ["Timeline", "timeline"], ["Memories", "memories"], ["Family", "family"],
       ["Vault", "vault"], ["Messages", "messages"], ["Stories", "stories"],
-      ["AI Companion", "companion"], ["Legacy Film", "video"], ["Settings", "settings"],
+      ["AI Companion", "companion"], ["Legacy Film", "video"], ["Autobiography", "autobiography"], ["Settings", "settings"],
     ];
 
     // Viewport matrix: desktop (≥1024, sidebar pinned), mobile (<768, bottom nav),
@@ -316,7 +316,7 @@ async function main() {
             if (!btn) return false; btn.click(); return true;
           })()`);
           if (!ok) { critical(`app/${mode}: tab "${label}"`, "button not found in sidebar"); continue; }
-          await sleep(500);
+          await sleep(900); // generous: CI/dev machines are often under load
           const errsBefore = p.pageErrors.length + p.consoleErrors.length;
           const rendered = await evalJs(p, `document.getElementById("app-main-canvas").children.length > 0`);
           if (!rendered) critical(`app/${mode}: tab "${label}"`, "main canvas empty after click");

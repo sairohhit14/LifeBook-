@@ -9,6 +9,18 @@ image description, and video storyboarding.
 One backend, one source of truth. The previous dual-backend setup (Spring Boot + Node)
 has been consolidated: **the Node/Express backend is the only backend.**
 
+Feature highlight — **Autobiography** (`src/components/Autobiography.tsx`,
+`server/autobiography-pipeline.ts`, `/api/autobiography*`): turns the user's real
+memories and milestones into a source-grounded, first-person life story. The
+pipeline clusters memories into chapters, detects conflicting dates/places, and
+constrains Gemini to a strict biographer role (no invented people, dates, or
+events; untrusted memory text is fenced against prompt injection; AI output is
+validated against the chapter plan and rejected if it cites memories it wasn't
+given). Generation is per-chapter with persisted progress and per-chapter retry,
+never rewrites user-edited chapters, reuses unchanged chapters via a source
+fingerprint, and is rate-limited. Guests (family view-only) can read a
+copy only after the owner publishes it; drafts are private to the owner.
+
 ```
 React/Vite SPA (src/)
         │  fetch /api/* (same-origin; Vite dev proxy or Vercel rewrite)
@@ -100,7 +112,8 @@ including `SESSION_SECRET`, Supabase, Firebase, Gemini, and email settings.
 ## Testing & CI
 
 ```bash
-npm test           # typecheck + db-race-check + supabase-sync-check + server-routes-check
+npm test           # typecheck + db-race + supabase-sync + server routes + design tokens + autobiography
+npm run test:browser   # headless-Chrome QA across the desktop/tablet/mobile matrix (dev server on :3000)
 npm run audit:secrets  # crude committed-secret scanner (also runs in CI)
 npm run build      # production SPA build
 ```
@@ -109,6 +122,10 @@ npm run build      # production SPA build
 - `test/supabase-sync-check.ts` — vault round-trip self-check (fetch stubbed, no network)
 - `test/server-routes-check.ts` — regression checks for the security-sensitive routes
   (admin gate, payment 501 stub, ad-tracker auth, role-escalation block, OTP lockout)
+- `test/autobiography-check.ts` — autobiography pipeline units + route security
+  (guest privacy, IDOR, idempotency, grounded generation, edit preservation, rate limits)
+- `test/browser-qa.mjs` — dependency-free headless-Chrome QA: console errors, overflow,
+  navigation, modals, reduced motion across 8 viewports
 - `live-supabase-check.ts` — manual live check; only with your own test credentials
 
 CI (`.github/workflows/ci.yml`): secret scan → typecheck → tests → build → artifact

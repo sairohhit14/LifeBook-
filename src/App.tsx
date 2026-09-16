@@ -11,6 +11,7 @@ import LegacyMessages from "./components/LegacyMessages";
 import FamilyCircle from "./components/FamilyCircle";
 import SecureVault from "./components/SecureVault";
 import BiographyBooks from "./components/BiographyBooks";
+import Autobiography from "./components/Autobiography";
 import LegacyCompanion from "./components/LegacyCompanion";
 import GlobalSearch from "./components/GlobalSearch";
 import SettingsPanel from "./components/SettingsPanel";
@@ -387,6 +388,7 @@ export default function App() {
                 { id: "family", label: "Family", icon: <Users className="w-4 h-4" /> },
                 { id: "vault", label: "Vault", icon: <ShieldAlert className="w-4 h-4" /> },
                 { id: "stories", label: "Stories", icon: <BookOpen className="w-4 h-4" /> },
+                { id: "autobiography", label: "Autobiography", icon: <BookOpen className="w-4 h-4" /> },
                 { id: "companion", label: "AI Companion", icon: <MessageSquare className="w-4 h-4" /> },
                 { id: "video", label: "Legacy Film", icon: <Video className="w-4 h-4" /> },
                 ...(MONETIZATION_ENABLED ? [{ id: "plans", label: "Storage Plans", icon: <HardDrive className="w-4 h-4 text-[#315C4A]" />, highlight: true }] : []),
@@ -523,6 +525,14 @@ export default function App() {
             <SecureVault 
               onVaultChanged={refreshStatsAndNotifications} 
               guestMode={guestMode}
+            />
+          )}
+
+          {activeTab === "autobiography" && (
+            <Autobiography
+              user={user}
+              guestMode={guestMode}
+              onNavigate={(tab) => setActiveTab(tab)}
             />
           )}
 

@@ -343,3 +343,55 @@ export interface Payment {
   status: 'success' | 'failed' | 'pending';
 }
 
+
+/* ================= AUTOBIOGRAPHY ================= */
+
+export interface AutobiographySourceRef {
+  kind: "memory" | "milestone" | "photo";
+  id: string;
+}
+
+export type AutobiographyChapterStatus = "pending" | "generating" | "ready" | "failed";
+
+export interface AutobiographyChapter {
+  id: string;
+  title: string;
+  subtitle?: string;
+  order: number;
+  period?: string; // human label, e.g. "1998 – 2006"
+  sections: string[]; // narrative paragraphs, user-editable and authoritative
+  memoryIds: string[];
+  photoIds: string[];
+  status: AutobiographyChapterStatus;
+  userEdited?: boolean;
+  error?: string; // set when status === "failed"
+  updatedAt: string;
+}
+
+export interface Autobiography {
+  id: string;
+  userId: string;
+  title: string;
+  subtitle?: string;
+  coverPhotoId?: string; // media id of the cover photo (or profile photo)
+  status: "empty" | "generating" | "ready_for_review" | "published" | "failed";
+  narrativeStyle: string; // warm | reflective | simple | literary | conversational | formal
+  perspective: "first" | "third" | "legacy";
+  chapters: AutobiographyChapter[];
+  sourceHash: string; // fingerprint of source material at last generation
+  progress: { total: number; done: number }; // real, bounded progress
+  conflicts?: { kind: string; subject: string; detail: string; memoryIds: string[] }[]; // detected source conflicts for review
+  lastError?: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+}
+
+// Autobiography generation settings
+export interface AutobiographySettings {
+  narrativeStyle: string;
+  perspective: "first" | "third" | "legacy";
+  title?: string;
+  subtitle?: string;
+  coverPhotoId?: string;
+}

@@ -516,8 +516,23 @@ function authMiddleware(req: express.Request, res: express.Response, next: expre
 
   // If this is a guest family member session
   if (userId.startsWith("guest_")) {
-    const parts = userId.split("_");
-    const ownerId = parts[1];
+    // Tokens are `guest_<ownerId>_<name>`. Owner ids may themselves contain
+    // underscores (e.g. `local_<uuid>` for non-Firebase accounts), so the
+    // owner id is base64url-encoded in new tokens. Old tokens carry the raw
+    // id — accept whichever form matches a real user.
+    const rest = userId.slice("guest_".length);
+    const sep = rest.indexOf("_");
+    if (sep === -1) {
+      return res.status(401).json({ error: "Invalid legacy guest credentials" });
+    }
+    const rawId = rest.slice(0, sep);
+    let ownerId: string | null = db.users.some((u: any) => u.id === rawId) ? rawId : null;
+    if (!ownerId) {
+      try {
+        const decoded = Buffer.from(rawId, "base64url").toString("utf8");
+        if (decoded && db.users.some((u: any) => u.id === decoded)) ownerId = decoded;
+      } catch { /* not base64 — fall through */ }
+    }
     if (!ownerId) {
       return res.status(401).json({ error: "Invalid legacy guest credentials" });
     }
@@ -1052,7 +1067,9 @@ app.post("/api/auth/family-login", authRateLimiter, (req, res) => {
     return res.status(404).json({ error: "Invalid Legacy Key. Please check with the legacy owner for the correct key." });
   }
 
-  const guestUserId = `guest_${owner.id}_${Buffer.from(familyMemberName).toString("base64")}`;
+  // base64url-encode the owner id: local ids contain underscores
+  // (`local_<uuid>`) and the guest token format is `guest_<ownerId>_<name>`.
+  const guestUserId = `guest_${Buffer.from(owner.id).toString("base64url")}_${Buffer.from(familyMemberName).toString("base64url")}`;
   const completion = calculateCompletion(owner.id, db);
 
   res.json({
@@ -3191,6 +3208,467 @@ app.get("/api/admin/revenue", authMiddleware, (req: express.Request, res: expres
       { name: "Horizon Health Sciences", type: "Company", members: 210, mrr: 4999 }
     ]
   });
+});
+
+/* ================= AUTOBIOGRAPHY =================
+ *
+ * Turns the user's real memories/milestones into a source-grounded, human
+ * autobiography. Pipeline logic lives in server/autobiography-pipeline.ts
+ * (pure functions, unit-tested). Security model: every route requires
+ * authMiddleware; the document is always loaded by req.userId so cross-user
+ * (IDOR) access is structurally impossible; guests are read-only and only
+ * see PUBLISHED copies. Generation is per-chapter and idempotent: a crashed
+ * run leaves per-chapter status to retry, and a completed generation is
+ * reused unless source material changed (fingerprint check, §44).
+ */
+import {
+  clusterIntoChapters,
+  detectConflicts,
+  buildGenerationPrompt,
+  validateGeneratedChapters,
+  findBannedPhrases,
+  toChapter,
+  sourceFingerprint,
+  type PipelineMemory,
+  type PipelineMilestone,
+  type ChapterPlan,
+  type SourceConflict,
+} from "./server/autobiography-pipeline";
+
+// ---------------------------------------------------------------- helpers
+
+function getAutobiography(db: any, userId: string) {
+  if (!db.autobiographies) db.autobiographies = [];
+  let auto = db.autobiographies.find((a: any) => a.userId === userId);
+  if (!auto) {
+    auto = {
+      id: `auto_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      userId,
+      title: "My Life Story",
+      status: "empty",
+      narrativeStyle: "warm",
+      perspective: "first",
+      chapters: [],
+      sourceHash: "",
+      progress: { total: 0, done: 0 },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    db.autobiographies.push(auto);
+  }
+  return auto;
+}
+
+function collectSources(db: any, userId: string) {
+  const memories: PipelineMemory[] = (db.memories || [])
+    .filter((m: any) => m.userId === userId)
+    .map((m: any) => ({
+      id: m.id, title: m.title ?? "", description: m.description ?? "",
+      date: m.date ?? "", location: m.location, tags: m.tags, media: m.media,
+    }));
+  const milestones: PipelineMilestone[] = (db.milestones || [])
+    .filter((m: any) => m.userId === userId)
+    .map((m: any) => ({
+      id: m.id, title: m.title ?? "", description: m.description ?? "",
+      date: m.date ?? "", category: m.category, location: m.location, media: m.media,
+    }));
+  return { memories, milestones };
+}
+
+function photoUrlFor(db: any, mediaId: string): string | null {
+  for (const m of db.memories || []) {
+    const hit = (m.media || []).find((x: any) => x.id === mediaId);
+    if (hit) return hit.url;
+  }
+  return null;
+}
+
+function publicAuto(auto: any, db: any, isGuest: boolean) {
+  const photoCache = new Map<string, string | null>();
+  const resolvePhoto = (id: string) => {
+    if (!photoCache.has(id)) photoCache.set(id, photoUrlFor(db, id));
+    return photoCache.get(id);
+  };
+  const chapters = (auto.chapters || []).map((c: any) => ({
+    id: c.id, title: c.title, subtitle: c.subtitle, order: c.order, period: c.period,
+    sections: c.sections, status: c.status, userEdited: !!c.userEdited,
+    memoryCount: (c.memoryIds || []).length,
+    photos: (c.photoIds || []).map((id: string) => ({ id, url: resolvePhoto(id), caption: c.captions?.[id] }))
+      .filter((p: any) => p.url),
+    error: c.status === "failed" ? c.error : undefined,
+  }));
+  const base: any = {
+    id: auto.id, title: auto.title, subtitle: auto.subtitle, status: auto.status,
+    narrativeStyle: auto.narrativeStyle, perspective: auto.perspective,
+    progress: auto.progress, lastError: auto.lastError,
+    updatedAt: auto.updatedAt, publishedAt: auto.publishedAt,
+    chapters,
+  };
+  if (!isGuest) {
+    base.conflicts = auto.conflicts ?? [];
+    base.memoryCount = new Set((auto.chapters || []).flatMap((c: any) => c.memoryIds || [])).size;
+    base.photoCount = new Set((auto.chapters || []).flatMap((c: any) => c.photoIds || [])).size;
+  }
+  return base;
+}
+
+// ponytail: in-memory per-user rate limit — per-instance only. Fine for the
+// single-node dev server and per-lambda Vercel functions; upgrade path is a
+// shared store if generation abuse ever shows up across instances.
+const autoGenAttempts = new Map<string, number[]>();
+function autoGenRateLimited(userId: string): boolean {
+  const now = Date.now();
+  const arr = (autoGenAttempts.get(userId) || []).filter((t) => now - t < 60_000);
+  if (arr.length >= 5) return true;
+  arr.push(now);
+  autoGenAttempts.set(userId, arr);
+  return false;
+}
+export function resetAutoGenRateLimiterForTests() { autoGenAttempts.clear(); }
+
+/**
+ * Generation core. Per-chapter AI calls with real, persisted progress
+ * (§28): a crash mid-run leaves earlier chapters ready and failed ones
+ * retryable. User-edited chapters are never rewritten (§47). When
+ * `onlyIds` is given, only those chapters are (re)written — retry and
+ * single-chapter regeneration reuse it. Assumes source plans are stable
+ * between the failing run and the retry (same sources → same plan).
+ */
+// Test seam: inject a fake AI client so the generation core is testable
+// without real credentials. Always null in production.
+let aiClientOverride: any = null;
+export function setAiClientOverrideForTests(client: any) { aiClientOverride = client; }
+export async function runGenerationForTests(auto: any, user: any, db: any, onlyIds?: string[]) {
+  return runGeneration(auto, user, db, onlyIds);
+}
+
+async function runGeneration(auto: any, user: any, db: any, onlyIds?: string[]) {
+  const userId = auto.userId;
+  const { memories, milestones } = collectSources(db, userId);
+  const conflicts = detectConflicts(memories);
+  const memoriesById = new Map<string, PipelineMemory | PipelineMilestone>();
+  for (const m of memories) memoriesById.set(m.id, m);
+  for (const m of milestones) memoriesById.set(m.id, m);
+
+  auto.sourceHash = sourceFingerprint(memories, milestones);
+  auto.conflicts = conflicts;
+
+  if (memories.length + milestones.length === 0) {
+    auto.chapters = [];
+    auto.status = "empty";
+    auto.progress = { total: 0, done: 0 };
+    auto.updatedAt = new Date().toISOString();
+    writeDb(db);
+    return;
+  }
+
+  const plans = clusterIntoChapters(memories, milestones);
+
+  // Match previous chapters to new plans by CONTENT (memory overlap), not
+  // title — plan titles change as the collection grows (e.g. the §25
+  // thin-book chapter is renamed into themed chapters), and a user's words
+  // must survive that. Title match is the strongest signal; overlap decides
+  // the rest. Each previous chapter is consumed at most once.
+  const prevChapters = [...(auto.chapters || [])];
+  const matchPrev = (p: ChapterPlan): any | undefined => {
+    let best: any = undefined;
+    let bestScore = 0;
+    for (const prev of prevChapters) {
+      if (!prev || (prev as any)._consumed) continue;
+      const overlap = (prev.memoryIds || []).filter((id: string) => p.memoryIds.includes(id)).length;
+      const score = prev.title === p.title ? overlap + 1000 : overlap;
+      if (score > bestScore) { bestScore = score; best = prev; }
+    }
+    if (best) (best as any)._consumed = true;
+    return best;
+  };
+
+  auto.chapters = plans.map((p: ChapterPlan, i: number) => {
+    const prev = matchPrev(p);
+    if (prev && prev.userEdited) {
+      // §47: user text is authoritative — keep it, refresh source linkage only.
+      return { ...prev, order: i, status: "ready", photoIds: p.photoIds, memoryIds: p.memoryIds };
+    }
+    const wanted = !onlyIds || (prev ? onlyIds.includes(prev.id) : false);
+    return {
+      id: prev?.id ?? `chap_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title: p.title,
+      subtitle: prev?.subtitle,
+      order: i,
+      period: p.period,
+      sections: wanted ? [] : (prev?.sections ?? []),
+      memoryIds: p.memoryIds,
+      photoIds: p.photoIds,
+      captions: wanted ? undefined : prev?.captions,
+      status: wanted ? "pending" : (prev?.status ?? "pending"),
+      userEdited: prev?.userEdited ?? false,
+      error: wanted ? undefined : prev?.error,
+      updatedAt: new Date().toISOString(),
+    };
+  });
+
+  auto.status = "generating";
+  auto.lastError = undefined;
+  writeDb(db);
+
+  let anyFailed = false;
+
+  for (let i = 0; i < auto.chapters.length; i++) {
+    const ch = auto.chapters[i];
+    if (ch.status === "ready") continue; // user-edited or untouched chapter
+    ch.status = "generating";
+    writeDb(db);
+    try {
+      // Resolved lazily: a book whose chapters are all user-edited (or already
+      // ready) must not require AI credentials at all.
+      const aiClient = aiClientOverride ?? getAiClient();
+      const { system, user: userPrompt } = buildGenerationPrompt({
+        userName: user.name,
+        perspective: auto.perspective,
+        style: auto.narrativeStyle,
+        chapters: [plans[i]],
+        memoriesById,
+        conflicts,
+      });
+      const result = await generateContentWithFallback(aiClient, {
+        contents: userPrompt,
+        config: {
+          systemInstruction: system,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              chapters: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    index: { type: Type.NUMBER, description: "chapter index, always 1 in this single-chapter response" },
+                    title: { type: Type.STRING },
+                    subtitle: { type: Type.STRING },
+                    period: { type: Type.STRING },
+                    paragraphs: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    usedMemoryIds: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    captions: {
+                      type: Type.ARRAY,
+                      items: {
+                        type: Type.OBJECT,
+                        properties: { photoId: { type: Type.STRING }, caption: { type: Type.STRING } },
+                        required: ["photoId", "caption"],
+                      },
+                      description: "factual captions for photos assigned to this chapter",
+                    },
+                  },
+                  required: ["index", "title", "paragraphs", "usedMemoryIds"],
+                },
+              },
+            },
+            required: ["chapters"],
+          },
+        },
+      });
+      const parsed = JSON.parse(result.text || "{}");
+      const check: any = validateGeneratedChapters(parsed, [plans[i]]);
+      if (!check.ok) throw new Error(`AI output rejected: ${check.reason}`);
+      const gen = check.chapters[0];
+      ch.title = ch.userEdited ? ch.title : gen.title;
+      ch.subtitle = gen.subtitle;
+      ch.period = gen.period;
+      ch.sections = gen.sections;
+      ch.status = "ready";
+      ch.error = undefined;
+      ch.updatedAt = new Date().toISOString();
+    } catch (err: any) {
+      ch.status = "failed";
+      ch.error = "This chapter could not be written. You can retry it.";
+      anyFailed = true;
+      console.error(`[autobiography] chapter ${i + 1} (${ch.title}) failed:`, err.message);
+    }
+    writeDb(db);
+  }
+
+  const resolved = auto.chapters.filter((c: any) => c.status === "ready" || c.status === "failed").length;
+  auto.progress = { total: auto.chapters.length, done: resolved };
+  auto.status = anyFailed ? "failed" : "ready_for_review";
+  if (anyFailed) auto.lastError = "Some chapters could not be written. You can retry them.";
+  auto.updatedAt = new Date().toISOString();
+  writeDb(db);
+
+  // §46: reuse the existing notification infrastructure
+  if (anyFailed) {
+    addNotification(userId, "Autobiography needs attention", "Some chapters of your life story could not be written. Open Autobiography to retry them.");
+  } else {
+    addNotification(userId, "Your autobiography is ready", `"${auto.title}" is ready for your review.`);
+  }
+}
+
+// ---------------------------------------------------------------- routes
+
+app.get("/api/autobiography", authMiddleware, (req: express.Request, res: express.Response) => {
+  const userId = (req as any).userId as string;
+  const isGuest = !!(req as any).isGuest;
+  const db = readDb();
+
+  if (isGuest) {
+    // §32: guests see only a PUBLISHED copy — never drafts or generation state.
+    const auto = db.autobiographies?.find((a: any) => a.userId === userId);
+    if (!auto || auto.status !== "published") {
+      return res.status(404).json({ error: "No published autobiography available" });
+    }
+    return res.json(publicAuto(auto, db, true));
+  }
+
+  const auto = getAutobiography(db, userId);
+  writeDb(db);
+  const payload = publicAuto(auto, db, false);
+  // §44: let the UI know whether new source material exists
+  const { memories, milestones } = collectSources(db, userId);
+  payload.upToDate = auto.status === "generating" ? null : sourceFingerprint(memories, milestones) === auto.sourceHash;
+  payload.sourceCount = memories.length + milestones.length;
+  res.json(payload);
+});
+
+app.patch("/api/autobiography", authMiddleware, (req: express.Request, res: express.Response) => {
+  const userId = (req as any).userId as string;
+  const db = readDb();
+  const auto = getAutobiography(db, userId);
+  const { title, subtitle, coverPhotoId, narrativeStyle, perspective } = req.body ?? {};
+  if (title !== undefined) {
+    if (typeof title !== "string" || title.trim().length === 0 || title.length > 120)
+      return res.status(400).json({ error: "Title must be 1-120 characters" });
+    auto.title = title.trim();
+  }
+  if (subtitle !== undefined) auto.subtitle = typeof subtitle === "string" ? subtitle.slice(0, 160) : undefined;
+  if (coverPhotoId !== undefined) auto.coverPhotoId = typeof coverPhotoId === "string" ? coverPhotoId : undefined;
+  const STYLES = ["warm", "reflective", "simple", "literary", "conversational", "formal"];
+  if (narrativeStyle !== undefined) {
+    if (!STYLES.includes(narrativeStyle)) return res.status(400).json({ error: "Unsupported narrative style" });
+    auto.narrativeStyle = narrativeStyle;
+  }
+  if (perspective !== undefined) {
+    if (!["first", "third", "legacy"].includes(perspective)) return res.status(400).json({ error: "Unsupported perspective" });
+    auto.perspective = perspective;
+  }
+  auto.updatedAt = new Date().toISOString();
+  writeDb(db);
+  res.json(publicAuto(auto, db, false));
+});
+
+app.post("/api/autobiography/generate", authMiddleware, async (req: express.Request, res: express.Response) => {
+  const userId = (req as any).userId as string;
+  if (autoGenRateLimited(userId)) {
+    return res.status(429).json({ error: "Please wait a moment before generating again." });
+  }
+  const db = readDb();
+  const user = db.users.find((u: any) => u.id === userId);
+  if (!user) return res.status(401).json({ error: "User session expired" });
+  const auto = getAutobiography(db, userId);
+  if (auto.status === "generating") {
+    // §30 idempotency: never double-generate
+    return res.status(409).json({ error: "Generation already in progress", progress: auto.progress });
+  }
+  const { memories, milestones } = collectSources(db, userId);
+  if (memories.length + milestones.length === 0) {
+    return res.status(400).json({ error: "Add a few memories first — your story is written from what you have preserved." });
+  }
+  try { getAiClient(); } catch {
+    return res.status(503).json({ error: "AI writing is not configured on this server. Set GEMINI_API_KEY to enable it." });
+  }
+  res.status(202).json({ id: auto.id, status: "generating", progress: { total: 0, done: 0 } });
+  runGeneration(auto, user, db).catch((err) => {
+    console.error("[autobiography] generation crashed:", err.message);
+    auto.status = "failed";
+    auto.lastError = "Something interrupted the writing. Your existing story is safe — you can try again.";
+    writeDb(db);
+  });
+});
+
+app.post("/api/autobiography/chapters/:chapterId/regenerate", authMiddleware, async (req: express.Request, res: express.Response) => {
+  const userId = (req as any).userId as string;
+  const db = readDb();
+  const user = db.users.find((u: any) => u.id === userId);
+  const auto = getAutobiography(db, userId);
+  const chapter = auto.chapters.find((c: any) => c.id === req.params.chapterId);
+  if (!chapter) return res.status(404).json({ error: "Chapter not found" });
+  if (chapter.userEdited) {
+    return res.status(409).json({ error: "You have edited this chapter. Regenerating would replace your words." });
+  }
+  if (auto.status === "generating") return res.status(409).json({ error: "Generation already in progress" });
+  try { getAiClient(); } catch {
+    return res.status(503).json({ error: "AI writing is not configured on this server." });
+  }
+  res.status(202).json({ status: "generating" });
+  runGeneration(auto, user, db, [chapter.id]).catch((err) => {
+    console.error("[autobiography] regenerate crashed:", err.message);
+    chapter.status = "failed";
+    chapter.error = "This chapter could not be written. You can retry it.";
+    writeDb(db);
+  });
+});
+
+app.patch("/api/autobiography/chapters/:chapterId", authMiddleware, (req: express.Request, res: express.Response) => {
+  const userId = (req as any).userId as string;
+  const db = readDb();
+  const auto = getAutobiography(db, userId);
+  const chapter = auto.chapters.find((c: any) => c.id === req.params.chapterId);
+  if (!chapter) return res.status(404).json({ error: "Chapter not found" });
+  const { title, subtitle, sections, captions } = req.body ?? {};
+  if (title !== undefined) {
+    if (typeof title !== "string" || title.trim().length === 0 || title.length > 120)
+      return res.status(400).json({ error: "Title must be 1-120 characters" });
+    chapter.title = title.trim();
+  }
+  if (subtitle !== undefined) chapter.subtitle = typeof subtitle === "string" ? subtitle.slice(0, 160) : undefined;
+  if (sections !== undefined) {
+    if (!Array.isArray(sections) || sections.some((s: any) => typeof s !== "string" || s.length > 2000))
+      return res.status(400).json({ error: "Sections must be an array of paragraphs (max 2000 chars each)" });
+    chapter.sections = sections.map((s: string) => s.trim()).filter(Boolean);
+  }
+  if (captions !== undefined) {
+    // §19: every generated caption is user-editable; unknown photo ids are ignored.
+    if (!captions || typeof captions !== "object" || Array.isArray(captions))
+      return res.status(400).json({ error: "Captions must be an object of photoId -> text" });
+    if (!chapter.captions) chapter.captions = {};
+    for (const [pid, cap] of Object.entries(captions)) {
+      if (!chapter.photoIds.includes(pid)) continue;
+      if (cap === null || cap === "") delete chapter.captions[pid];
+      else if (typeof cap === "string") chapter.captions[pid] = cap.slice(0, 200);
+    }
+  }
+  chapter.userEdited = true; // §47: once touched by the user, AI never overwrites
+  chapter.status = "ready";
+  chapter.error = undefined;
+  chapter.updatedAt = new Date().toISOString();
+  auto.updatedAt = new Date().toISOString();
+  writeDb(db);
+  res.json(publicAuto(auto, db, false));
+});
+
+app.post("/api/autobiography/publish", authMiddleware, (req: express.Request, res: express.Response) => {
+  const userId = (req as any).userId as string;
+  const db = readDb();
+  const auto = getAutobiography(db, userId);
+  if (!auto.chapters.length) return res.status(400).json({ error: "Generate your story first." });
+  if (auto.chapters.some((c: any) => c.status !== "ready")) {
+    return res.status(400).json({ error: "Finish or remove failed chapters before sharing your story." });
+  }
+  auto.status = "published";
+  auto.publishedAt = new Date().toISOString();
+  auto.updatedAt = auto.publishedAt;
+  writeDb(db);
+  addNotification(userId, "Story shared", "Your autobiography is now visible to your family.");
+  res.json(publicAuto(auto, db, false));
+});
+
+app.post("/api/autobiography/unpublish", authMiddleware, (req: express.Request, res: express.Response) => {
+  const userId = (req as any).userId as string;
+  const db = readDb();
+  const auto = getAutobiography(db, userId);
+  auto.status = "ready_for_review";
+  auto.publishedAt = undefined;
+  auto.updatedAt = new Date().toISOString();
+  writeDb(db);
+  res.json(publicAuto(auto, db, false));
 });
 
 // Vite middleware integration (from instructions)

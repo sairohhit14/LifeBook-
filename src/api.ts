@@ -687,6 +687,76 @@ export const api = {
     });
     if (!res.ok) throw new Error("Failed to load billing summary");
     return res.json();
+  },
+
+  /* ================= AUTOBIOGRAPHY ================= */
+
+  async getAutobiography(): Promise<any> {
+    const res = await fetch(`${API_BASE}/api/autobiography`, { headers: getHeaders() });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "We couldn't open your autobiography. Please try again.");
+    }
+    return res.json();
+  },
+
+  async generateAutobiography(): Promise<void> {
+    const res = await fetch(`${API_BASE}/api/autobiography/generate`, {
+      method: "POST",
+      headers: getHeaders()
+    });
+    if (!res.ok && res.status !== 202 && res.status !== 409) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "We couldn't start writing right now. Please try again.");
+    }
+  },
+
+  async regenerateChapter(chapterId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/api/autobiography/chapters/${encodeURIComponent(chapterId)}/regenerate`, {
+      method: "POST",
+      headers: getHeaders()
+    });
+    if (!res.ok && res.status !== 202) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "We couldn't rewrite that chapter. Please try again.");
+    }
+  },
+
+  async updateChapter(chapterId: string, patch: { title?: string; subtitle?: string; sections?: string[]; captions?: Record<string, string> }): Promise<any> {
+    const res = await fetch(`${API_BASE}/api/autobiography/chapters/${encodeURIComponent(chapterId)}`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(patch)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "We couldn't save your changes. Please try again.");
+    }
+    return res.json();
+  },
+
+  async publishAutobiography(): Promise<any> {
+    const res = await fetch(`${API_BASE}/api/autobiography/publish`, {
+      method: "POST",
+      headers: getHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "We couldn't share your story. Please try again.");
+    }
+    return res.json();
+  },
+
+  async unpublishAutobiography(): Promise<any> {
+    const res = await fetch(`${API_BASE}/api/autobiography/unpublish`, {
+      method: "POST",
+      headers: getHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "We couldn't update sharing. Please try again.");
+    }
+    return res.json();
   }
 };
 
