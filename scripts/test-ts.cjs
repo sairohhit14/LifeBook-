@@ -4,6 +4,7 @@
  *   2. test/db-race-check.ts — cross-process db.json write-race self-check
  *   3. test/supabase-sync-check.ts — Supabase vault round-trip self-check
  *   4. test/server-routes-check.ts — security-sensitive route unit checks
+ *   5. test/message-capsule-check.ts — capsule Gmail delivery + memory captions
  *   5. test/design-tokens-check.ts — UI design-system regression guard
  *   6. test/autobiography-check.ts — autobiography pipeline + route security
  *
@@ -18,8 +19,12 @@ for (const [name, cmd, args] of [
   ["db-race-check", "npx", ["tsx", "test/db-race-check.ts"]],
   ["supabase-sync-check", "npx", ["tsx", "test/supabase-sync-check.ts"]],
   ["server-routes-check", "npx", ["tsx", "test/server-routes-check.ts"]],
+  ["message-capsule-check", "npx", ["tsx", "test/message-capsule-check.ts"]],
+  ["companion-tuning-check", "npx", ["tsx", "test/companion-tuning-check.ts"]],
   ["design-tokens-check", "npx", ["tsx", "test/design-tokens-check.ts"]],
   ["autobiography-check", "npx", ["tsx", "test/autobiography-check.ts"]],
+  ["language-check", "npx", ["tsx", "test/language-check.ts"]],
+  ["demo-accounts-check", "npx", ["tsx", "test/demo-accounts-check.ts"]],
 ]) {
   console.log(`\n=== ${name} ===`);
   const res = spawnSync(cmd, args, { stdio: "inherit", shell: true });
