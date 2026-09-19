@@ -1,10 +1,31 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ChatMessage } from "../types";
 import { api } from "../api";
+import { INDIAN_LANGUAGES, findLanguage } from "../languages";
 import { 
   MessageSquare, Send, Sparkles, Loader, Trash2, Heart, HelpCircle, 
-  ArrowRight, Check, CheckCircle2, AlertCircle
+  ArrowRight, Check, CheckCircle2, AlertCircle, Mic, MicOff, Volume2, Languages
 } from "lucide-react";
+
+// Minimal typings for the Web Speech API (not in TS lib by default).
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives?: number;
+  start(): void;
+  stop(): void;
+  onresult: ((e: any) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+}
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+const getSpeechRecognition = (): SpeechRecognitionCtor | null =>
+  (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition ?? null;
+
+// Minimal ambient STT support detection (one-shot per module load).
+const SPEECH_RECOGNITION_AVAILABLE =
+  typeof window !== "undefined" && !!(getSpeechRecognition());
 
 interface LegacyCompanionProps {
   onMemoryAdded: () => void;
@@ -28,6 +49,61 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
   const [error, setError] = useState("");
   const [savingAsMemory, setSavingAsMemory] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // ---- language + voice assistant (speak & understand Indian languages)
+  const [langCode, setLangCode] = useState<string>(() => localStorage.getItem("lifebook_companion_lang") || "");
+  const [listening, setListening] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const activeLang = findLanguage(langCode || "en-IN");
+
+  useEffect(() => {
+    localStorage.setItem("lifebook_companion_lang", langCode);
+  }, [langCode]);
+
+  // Speak a companion message in the selected language.
+  const speak = (msg: ChatMessage) => {
+    if (!window.speechSynthesis) return;
+    if (speakingId === msg.id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(msg.text);
+    u.lang = langCode || "en-IN";
+    u.onend = () => setSpeakingId(null);
+    u.onerror = () => setSpeakingId(null);
+    utteranceRef.current = u;
+    setSpeakingId(msg.id);
+    window.speechSynthesis.speak(u);
+  };
+
+  // Dictate into the input using the selected language.
+  const toggleListening = () => {
+    const Ctor = getSpeechRecognition();
+    if (!Ctor) return;
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const rec = new Ctor();
+    rec.lang = langCode || "en-IN";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e: any) => {
+      const said = Array.from(e.results ?? []).map((r: any) => r[0]?.transcript ?? "").join(" ").trim();
+      if (said) setInputText((prev) => (prev ? `${prev} ` : "") + said);
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    recognitionRef.current = rec;
+    setListening(true);
+    try { rec.start(); } catch { setListening(false); }
+  };
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -67,8 +143,10 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
     setSending(true);
 
     try {
-      const companionMsg = await api.sendMessage(textToSend);
+      // Server instructs Gemini to answer in the selected language.
+      const companionMsg = await api.sendMessage(textToSend, langCode || undefined);
       setMessages(prev => [...prev, companionMsg]);
+      if (langCode) speak(companionMsg); // voice assistant: read the reply aloud
     } catch (err: any) {
       setError(err.message || "We couldn't send that message. Please try again.");
     } finally {
@@ -182,6 +260,24 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
             </div>
           </div>
 
+          {/* Conversation language: companion speaks & understands it */}
+          <div className="flex items-center gap-1.5">
+            <Languages className="w-3.5 h-3.5 text-[#8A8F8B]" aria-hidden="true" />
+            <select
+              value={langCode}
+              onChange={(e) => { setLangCode(e.target.value); window.speechSynthesis?.cancel(); setSpeakingId(null); }}
+              aria-label="Conversation language"
+              className="px-2 py-1.5 bg-white border border-[#E5E5E1] rounded-[10px] text-[10px] text-[#1A1A1A] focus:outline-none focus:border-[#315C4A] cursor-pointer"
+            >
+              <option value="">Auto (mirror user)</option>
+              {INDIAN_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.native === l.label ? l.label : `${l.native} · ${l.label}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
             onClick={handleClearHistory}
             className="p-1.5 hover:bg-[#F9EFEB] border border-transparent hover:border-[#E8CDC4] rounded-[16px] text-[#8A8F8B] hover:text-[#B4543E] transition-all cursor-pointer"
@@ -235,6 +331,16 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
                       : "bg-[#F1EFEC] border border-[#E5E5E1] text-[#1A1A1A] font-serif italic text-justify whitespace-pre-wrap"
                   }`}>
                     <p>{msg.text}</p>
+                    {!isUser && ("speechSynthesis" in window) && (
+                      <button
+                        onClick={() => speak(msg)}
+                        aria-pressed={speakingId === msg.id}
+                        aria-label={speakingId === msg.id ? "Stop reading aloud" : "Read aloud"}
+                        className="mt-2 text-[#8A8F8B] hover:text-[#315C4A] transition-colors cursor-pointer"
+                      >
+                        {speakingId === msg.id ? <MicOff className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -265,11 +371,35 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
             <input
               type="text"
               disabled={sending || guestMode}
-              placeholder={guestMode ? "Chat inputs disabled in Family Guest mode" : "Tell your coach about a defining childhood memory..."}
+              placeholder={
+                listening
+                  ? "Listening..."
+                  : guestMode
+                    ? "Chat inputs disabled in Family Guest mode"
+                    : activeLang && langCode
+                      ? `Tell your coach in ${activeLang.native}...`
+                      : "Tell your coach about a defining childhood memory..."
+              }
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               className="flex-1 px-4 py-3 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
             />
+            {SPEECH_RECOGNITION_AVAILABLE && !guestMode && (
+              <button
+                type="button"
+                onClick={toggleListening}
+                disabled={sending}
+                aria-pressed={listening}
+                aria-label={listening ? "Stop dictation" : "Speak your memory"}
+                className={`p-3 rounded-[16px] transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center border ${
+                  listening
+                    ? "bg-[#B4543E] hover:bg-[#9E4132] border-[#E8CDC4] text-white animate-pulse"
+                    : "bg-white hover:bg-[#F1EFEC] border-[#E5E5E1] text-[#315C4A]"
+                }`}
+              >
+                {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+            )}
             <button
               type="submit"
               disabled={sending || !inputText.trim() || guestMode}

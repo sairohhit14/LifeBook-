@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   BookOpen, Sparkles, Loader, AlertCircle, ChevronLeft, ChevronRight,
   Check, Pencil, RefreshCw, Share2, Eye, List, Type as TypeIcon, X,
+  Languages, Volume2, Square,
 } from "lucide-react";
 import { api } from "../api";
+import { INDIAN_LANGUAGES, findLanguage } from "../languages";
 import type { User } from "../types";
 
 // -------------------------------------------------------------- public types
@@ -46,6 +48,7 @@ interface Auto {
 
 const STORAGE_KEY_READ = "lifebook_auto_reading";
 const STORAGE_KEY_SIZE = "lifebook_auto_textsize";
+const STORAGE_KEY_LANG = "lifebook_auto_lang";
 
 function loadJson<T>(key: string, fallback: T): T {
   try {
@@ -75,6 +78,12 @@ export default function Autobiography({ user, guestMode, onNavigate }: {
   const [textSize, setTextSize] = useState<number>(() => loadJson(STORAGE_KEY_SIZE, 1));
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const readRootRef = useRef<HTMLDivElement | null>(null);
+
+  // -------- multi-language reading (major Indian languages, AI-translated)
+  const [lang, setLang] = useState<string>(() => loadJson(STORAGE_KEY_LANG, ""));
+  const [translation, setTranslation] = useState<any>(null);
+  const [translating, setTranslating] = useState(false);
+  const [langError, setLangError] = useState<string | null>(null);
 
   // ------------------------------------------------------------- data load
   const load = useCallback(async () => {
@@ -109,6 +118,48 @@ export default function Autobiography({ user, guestMode, onNavigate }: {
     const data = await api.getAutobiography();
     setAuto(data);
   }, []);
+
+  // Fetch (server-cached) translation whenever a language is picked or the
+  // book changes. English is the original — nothing to fetch.
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_LANG, JSON.stringify(lang));
+    if (!lang || !auto || (auto.status !== "ready_for_review" && auto.status !== "published")) return;
+    let cancelled = false;
+    setTranslating(true);
+    setLangError(null);
+    api.getAutobiographyTranslation(lang)
+      .then((t) => { if (!cancelled) setTranslation(t); })
+      .catch((err: any) => {
+        if (cancelled) return;
+        setTranslation(null);
+        setLangError(err.message || "We couldn't translate your story. Please try again.");
+      })
+      .finally(() => { if (!cancelled) setTranslating(false); });
+    return () => { cancelled = true; };
+  }, [lang, auto?.updatedAt, auto?.status]);
+
+  // The book as shown: English original, or the translated overlay. Chapter
+  // ids, order, photos and stats stay identical — only text changes.
+  const display = useMemo(() => {
+    if (!auto) return null;
+    if (lang === "" || !translation) return { title: auto.title, subtitle: auto.subtitle, chapters: auto.chapters };
+    const byId = new Map<string, any>((translation.chapters ?? []).map((c: any) => [c.id, c]));
+    return {
+      title: translation.title || auto.title,
+      subtitle: translation.subtitle ?? auto.subtitle,
+      chapters: auto.chapters.map((ch: Chapter) => {
+        const t = byId.get(ch.id);
+        if (!t) return ch;
+        return {
+          ...ch,
+          title: t.title ?? ch.title,
+          subtitle: t.subtitle ?? ch.subtitle,
+          sections: t.sections?.length ? t.sections : ch.sections,
+          photos: ch.photos.map((p: ChapterPhoto) => ({ ...p, caption: t.captions?.[p.id] ?? p.caption })),
+        };
+      }),
+    };
+  }, [auto, translation, lang]);
 
   // ------------------------------------------------------------- actions
   const handleGenerate = async () => {
@@ -188,9 +239,10 @@ export default function Autobiography({ user, guestMode, onNavigate }: {
   };
 
   const textPx = [17, 19, 22][textSize] ?? 19;
-  const chapter = auto?.chapters[chapterIdx];
+  const chapter = display?.chapters[chapterIdx];
   const wordCount = chapter?.sections.join(" ").split(/\s+/).filter(Boolean).length ?? 0;
   const readMinutes = Math.max(1, Math.round(wordCount / 200));
+  const canEditChapter = lang === ""; // edits always target the English original
 
   // humanized progress (only real numbers, §28)
   const phase = (() => {
@@ -262,6 +314,12 @@ export default function Autobiography({ user, guestMode, onNavigate }: {
       {view === "book" ? (
         <BookView
           auto={auto}
+          bookTitle={display?.title}
+          bookSubtitle={display?.subtitle}
+          lang={lang}
+          translating={translating}
+          langError={langError}
+          onLangChange={(code: string) => { setLang(code); setTranslation(null); setLangError(null); }}
           user={user}
           guestMode={guestMode}
           emptyBook={emptyBook}
@@ -288,15 +346,20 @@ export default function Autobiography({ user, guestMode, onNavigate }: {
             <ReadingView
               chapter={chapter}
               index={chapterIdx}
-              total={auto.chapters.length}
+              total={display.chapters.length}
               textPx={textPx}
               readMinutes={readMinutes}
               textSize={textSize}
               onTextSize={setTextSize}
+              lang={lang}
+              translating={translating}
+              langError={langError}
+              onLangChange={(code: string) => { setLang(code); setTranslation(null); setLangError(null); }}
+              canEdit={canEditChapter}
               onBack={() => setView("book")}
               onPrev={() => openChapter(Math.max(0, chapterIdx - 1))}
-              onNext={() => openChapter(Math.min(auto.chapters.length - 1, chapterIdx + 1))}
-              onEdit={() => openEditor(chapter)}
+              onNext={() => openChapter(Math.min(display.chapters.length - 1, chapterIdx + 1))}
+              onEdit={() => openEditor(auto.chapters[chapterIdx])}
               onRegenerate={() => handleRegenerate(chapter.id)}
               guestMode={guestMode}
             />
@@ -307,9 +370,39 @@ export default function Autobiography({ user, guestMode, onNavigate }: {
   );
 }
 
+/* ============================== LANGUAGE BAR ============================== */
+
+function LanguageBar({ lang, translating, error, onChange }: { lang: string; translating: boolean; error: string | null; onChange: (code: string) => void }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Languages className="w-3.5 h-3.5 text-[#8A8F8B] flex-shrink-0" aria-hidden="true" />
+        <label htmlFor="auto-lang-select" className="text-[10px] uppercase tracking-[0.12em] text-[#8A8F8B]">Read in</label>
+        <select
+          id="auto-lang-select"
+          value={lang}
+          onChange={(e) => onChange(e.target.value)}
+          className="px-2.5 py-1.5 bg-[#FCFBF7] border border-[#E5E5E1] rounded-[10px] text-xs text-[#1E2521] focus:outline-none focus:border-[#315C4A] cursor-pointer"
+        >
+          {INDIAN_LANGUAGES.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.native === l.label ? l.label : `${l.native} · ${l.label}`}
+            </option>
+          ))}
+        </select>
+        {translating && <Loader className="w-3.5 h-3.5 animate-spin text-[#315C4A]" aria-label="Translating" />}
+        {lang !== "" && !translating && (
+          <span className="text-[10px] text-[#8A8F8B]">AI translation — switch to English to edit</span>
+        )}
+      </div>
+      {error && <p className="text-[11px] text-[#B4543E]">{error}</p>}
+    </div>
+  );
+}
+
 /* ============================== BOOK VIEW ============================== */
 
-function BookView({ auto, user, guestMode, emptyBook, onOpenChapter, onGenerate, onPublish, onNavigate, onRefresh }: any) {
+function BookView({ auto, bookTitle, bookSubtitle, lang, translating, langError, onLangChange, user, guestMode, emptyBook, onOpenChapter, onGenerate, onPublish, onNavigate, onRefresh }: any) {
   const readyCount = auto.chapters.filter((c: Chapter) => c.status === "ready").length;
   const failedChapters = auto.chapters.filter((c: Chapter) => c.status === "failed");
   const isPublished = auto.status === "published";
@@ -327,9 +420,9 @@ function BookView({ auto, user, guestMode, emptyBook, onOpenChapter, onGenerate,
           </span>
           <BookOpen className="w-8 h-8 text-[#C9A66B]" aria-hidden="true" />
           <h1 className="text-3xl md:text-5xl font-serif text-[#1E2521] leading-tight">
-            {auto.title}
+            {bookTitle ?? auto.title}
           </h1>
-          {auto.subtitle && <p className="font-serif italic text-[#454A46]">{auto.subtitle}</p>}
+          {(bookSubtitle ?? auto.subtitle) && <p className="font-serif italic text-[#454A46]">{bookSubtitle ?? auto.subtitle}</p>}
           <p className="text-xs uppercase tracking-[0.15em] text-[#8A8F8B]">
             {user.name}{yearRange ? ` · ${yearRange}` : ""}
           </p>
@@ -367,6 +460,13 @@ function BookView({ auto, user, guestMode, emptyBook, onOpenChapter, onGenerate,
           </div>
         </div>
       </div>
+
+      {/* Read the book in a major Indian language (AI-translated, cached) */}
+      {!emptyBook && (
+        <div className="px-4 py-3 bg-[#FCFBF7] border border-[#E5E5E1] rounded-[16px] shadow-sm">
+          <LanguageBar lang={lang} translating={translating} error={langError} onChange={onLangChange} />
+        </div>
+      )}
 
       {/* Honest empty state (§25) */}
       {emptyBook ? (
@@ -468,8 +568,32 @@ function BookView({ auto, user, guestMode, emptyBook, onOpenChapter, onGenerate,
 
 /* ============================== READING VIEW ============================== */
 
-function ReadingView({ chapter, index, total, textPx, readMinutes, textSize, onTextSize, onBack, onPrev, onNext, onEdit, onRegenerate, guestMode }: any) {
+function ReadingView({ chapter, index, total, textPx, readMinutes, textSize, onTextSize, lang, translating, langError, onLangChange, canEdit, onBack, onPrev, onNext, onEdit, onRegenerate, guestMode }: any) {
   const progress = Math.round(((index + 1) / total) * 100);
+  const [speaking, setSpeaking] = useState(false);
+  const speakRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Native platform TTS — stops when chapter or language changes.
+  useEffect(() => {
+    return () => { window.speechSynthesis?.cancel(); setSpeaking(false); speakRef.current = null; };
+  }, [chapter?.id, lang]);
+
+  const handleSpeak = () => {
+    if (!window.speechSynthesis) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    const text = chapter.sections.join("\n\n");
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang || "en-IN";
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    speakRef.current = u;
+    setSpeaking(true);
+    window.speechSynthesis.speak(u);
+  };
 
   return (
     <article className="space-y-6 animate-fade-in">
@@ -497,6 +621,21 @@ function ReadingView({ chapter, index, total, textPx, readMinutes, textSize, onT
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Language + read-aloud */}
+      <div className="flex flex-col gap-3">
+        <LanguageBar lang={lang} translating={translating} error={langError} onChange={onLangChange} />
+        {"speechSynthesis" in window && (
+          <button
+            onClick={handleSpeak}
+            aria-pressed={speaking}
+            className="self-start px-3 py-1.5 bg-[#FCFBF7] border border-[#E5E5E1] text-[#315C4A] text-[11px] uppercase tracking-[0.1em] rounded-[10px] flex items-center gap-1.5 hover:bg-[#E2EBE4] transition-colors cursor-pointer"
+          >
+            {speaking ? <Square className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            {speaking ? "Stop reading" : "Read aloud"}
+          </button>
+        )}
       </div>
 
       {/* Reading progress (§15) */}
@@ -550,7 +689,7 @@ function ReadingView({ chapter, index, total, textPx, readMinutes, textSize, onT
             Based on {chapter.memoryCount} preserved {chapter.memoryCount === 1 ? "memory" : "memories"}
             {chapter.userEdited ? " · edited by you" : ""}
           </span>
-          {!guestMode && (
+          {!guestMode && canEdit && (
             <div className="flex items-center gap-2">
               <button
                 onClick={onEdit}

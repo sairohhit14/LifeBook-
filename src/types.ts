@@ -82,6 +82,7 @@ export interface MediaFile {
   type: 'image' | 'video' | 'audio';
   url: string; // Base64 or relative server upload URL
   name: string;
+  caption?: string; // per-photo text: title line shown with the photo in gallery/viewer
 }
 
 export interface Memory {
@@ -381,6 +382,7 @@ export interface Autobiography {
   sourceHash: string; // fingerprint of source material at last generation
   progress: { total: number; done: number }; // real, bounded progress
   conflicts?: { kind: string; subject: string; detail: string; memoryIds: string[] }[]; // detected source conflicts for review
+  translations?: Record<string, AutobiographyTranslation>; // cached AI translations per BCP-47 code
   lastError?: string;
   createdAt: string;
   updatedAt: string;
@@ -394,4 +396,25 @@ export interface AutobiographySettings {
   title?: string;
   subtitle?: string;
   coverPhotoId?: string;
+}
+
+// AI translation of the finished book into an Indian language, cached per
+// language code. Invalidated when sources (sourceHash) or any chapter's text
+// (chapter updatedAt stamp) change after the translation was made — book-level
+// metadata touches like publish/unpublish do NOT invalidate it.
+export interface AutobiographyTranslationChapter {
+  id: string;
+  title: string;
+  subtitle?: string;
+  sections: string[];
+  captions: Record<string, string>;
+}
+
+export interface AutobiographyTranslation {
+  title: string;
+  subtitle?: string;
+  chapters: AutobiographyTranslationChapter[];
+  sourceHash: string;
+  bookStamp: string;
+  translatedAt: string;
 }

@@ -38,13 +38,15 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
 
   // Email delivery config
   const [protocol, setProtocol] = useState<"SMTP" | "Resend">("SMTP");
-  const [smtpHost, setSmtpHost] = useState("");
+  const [smtpHost, setSmtpHost] = useState("smtp.gmail.com");
   const [smtpPort, setSmtpPort] = useState("587");
   const [smtpUser, setSmtpUser] = useState("");
   const [smtpPass, setSmtpPass] = useState("");
   const [smtpFrom, setSmtpFrom] = useState("");
   const [resendApiKey, setResendApiKey] = useState("");
   const [resendFrom, setResendFrom] = useState("");
+  const [testTo, setTestTo] = useState("");
+  const [testSending, setTestSending] = useState(false);
 
   useEffect(() => {
     fetchEmailConfig();
@@ -55,7 +57,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
       const config = await api.getEmailConfig();
       if (config) {
         setProtocol(config.protocol || "SMTP");
-        setSmtpHost(config.smtpHost || "");
+        setSmtpHost(config.smtpHost || "smtp.gmail.com");
         setSmtpPort(config.smtpPort || "587");
         setSmtpUser(config.smtpUser || "");
         setSmtpPass(config.smtpPass || "");
@@ -90,6 +92,24 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
       setError(err.message || "We couldn't save your email settings. Please check the details and try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    setError("");
+    setSuccess("");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testTo.trim())) {
+      setError("Enter a valid Gmail address to send the test email to.");
+      return;
+    }
+    setTestSending(true);
+    try {
+      await api.sendTestEmail(testTo.trim());
+      setSuccess(`Test email sent to ${testTo.trim()} — check that Gmail inbox (and spam folder).`);
+    } catch (err: any) {
+      setError(err.message || "Test email failed to send.");
+    } finally {
+      setTestSending(false);
     }
   };
 
@@ -470,14 +490,15 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">SMTP Password / App Key</label>
+                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">SMTP Password / App Password</label>
                     <input
                       type="password"
-                      placeholder="••••••••••••••••"
+                      placeholder="Gmail App Password (16 letters, no spaces)"
                       value={smtpPass}
                       onChange={(e) => setSmtpPass(e.target.value)}
                       className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
                     />
+                    <p className="text-[10px] text-[#8A8F8B] leading-relaxed">Gmail needs an App Password, not your login password: Google Account → Security → 2-Step Verification → App passwords.</p>
                   </div>
 
                   <div className="space-y-1">
@@ -529,6 +550,27 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
               >
                 {loading ? <Loader className="w-4 h-4 animate-spin" /> : <span>Save Email Credentials</span>}
               </button>
+
+              <div className="pt-2 border-t border-[#E5E5E1] space-y-2">
+                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Verify real Gmail delivery</label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    placeholder="you@gmail.com"
+                    value={testTo}
+                    onChange={(e) => setTestTo(e.target.value)}
+                    className="flex-1 px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendTestEmail}
+                    disabled={testSending}
+                    className="px-4 py-2.5 border border-[#315C4A] text-[#315C4A] hover:bg-[#315C4A] hover:text-white rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] cursor-pointer transition-all flex items-center gap-1 whitespace-nowrap"
+                  >
+                    {testSending ? <Loader className="w-4 h-4 animate-spin" /> : <span>Send test email</span>}
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
 

@@ -71,10 +71,29 @@ export const api = {
   },
 
   async loginWithGoogle(email: string, name: string, googleId?: string): Promise<User> {
+    // Demo path: explicit demo identity, sent as a scoped credential string.
+    // Only meaningful when the server runs with DEMO_INSECURE_GOOGLE=1.
     const res = await fetch(`${API_BASE}/api/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, name, googleId })
+      body: JSON.stringify({ credential: `${email}|${name || ""}` })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Google Sign-In failed");
+    }
+    const user = await res.json();
+    this.setSession(user.id);
+    return user;
+  },
+
+  async loginWithGoogleCredential(credential: string): Promise<User> {
+    // Real path: Firebase Auth ID token from the Google popup, verified
+    // server-side. The server never trusts client-sent profile fields.
+    const res = await fetch(`${API_BASE}/api/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ credential })
     });
     if (!res.ok) {
       const err = await res.json();
@@ -407,11 +426,12 @@ export const api = {
     return res.json();
   },
 
-  async sendMessage(message: string): Promise<ChatMessage> {
+  /** One AI-companion turn; `language` is a BCP-47 tag from src/languages.ts. */
+  async sendMessage(message: string, language?: string): Promise<ChatMessage> {
     const res = await fetch(`${API_BASE}/api/chat`, {
       method: "POST",
       headers: getHeaders(),
-      body: JSON.stringify({ message })
+      body: JSON.stringify({ message, language })
     });
     if (!res.ok) throw new Error("Failed to send message to AI companion");
     return res.json();
@@ -519,6 +539,19 @@ export const api = {
       headers: getHeaders()
     });
     if (!res.ok) throw new Error("Failed to load email configurations");
+    return res.json();
+  },
+
+  async sendTestEmail(to: string): Promise<{ success: boolean; messageId?: string }> {
+    const res = await fetch(`${API_BASE}/api/settings/email-config/test`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ to })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Test email failed to send");
+    }
     return res.json();
   },
 
@@ -755,6 +788,16 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || "We couldn't update sharing. Please try again.");
+    }
+    return res.json();
+  },
+
+  /** Translated copy of the finished autobiography (server caches per language). */
+  async getAutobiographyTranslation(langCode: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/api/autobiography/translate?lang=${encodeURIComponent(langCode)}`, { headers: getHeaders() });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Translation failed. Please try again.");
     }
     return res.json();
   }

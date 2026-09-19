@@ -156,6 +156,42 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
   const grandchildren = members.filter(m => ["Grandchild", "Grandson", "Granddaughter"].includes(m.relationship));
   const others = members.filter(m => !["Grandparent", "Grandmother", "Grandfather", "Parent", "Mother", "Father", "Spouse", "Husband", "Wife", "Partner", "Sibling", "Brother", "Sister", "Child", "Son", "Daughter", "Grandchild", "Grandson", "Granddaughter"].includes(m.relationship));
 
+  // Shared node card for the pedigree
+  const MemberNode = ({ m, key: _key }: { m: FamilyMember; key?: React.Key }) => (
+    <div className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
+      <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
+        {m.profilePhoto ? <img src={m.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : m.name[0]}
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{m.name}</p>
+        <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{m.relationship}</p>
+      </div>
+    </div>
+  );
+
+  // A generation row in the pedigree. When connectAbove is set, draws a stem
+  // from the previous generation plus a horizontal branch bar with a drop
+  // line into every node — the classic tree "T" connectors. Assumes all
+  // nodes are w-44 (176px), so node centers sit 88px from the row edges.
+  const TreeRow = ({ connectAbove, children }: { connectAbove?: boolean; children: React.ReactNode }) => {
+    const nodes = React.Children.toArray(children);
+    const hasBranch = !!connectAbove && nodes.length > 1;
+    return (
+      <div className="flex flex-col items-center">
+        {connectAbove && <div className="w-[1px] h-6 bg-[#E5E5E1]"></div>}
+        <div className="relative flex justify-center gap-4">
+          {hasBranch && <div className="absolute top-0 left-[88px] right-[88px] h-[1px] bg-[#E5E5E1]"></div>}
+          {nodes.map((node, i) => (
+            <div key={i} className="flex flex-col items-center">
+              {hasBranch && <div className="w-[1px] h-4 bg-[#E5E5E1]"></div>}
+              {node}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div id="family-root" className="space-y-8 animate-fade-in font-sans">
       <div id="family-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#E5E5E1]">
@@ -211,152 +247,55 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
             <div className="flex flex-col items-center justify-center space-y-6 py-6 overflow-x-auto min-w-full">
               {/* Generation 0: Grandparents */}
               {grandparents.length > 0 && (
-                <div className="flex flex-col items-center">
-                  <div className="flex gap-4">
-                    {grandparents.map(gp => (
-                      <div key={gp.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
-                        <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
-                          {gp.profilePhoto ? <img src={gp.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : gp.name[0]}
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{gp.name}</p>
-                          <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{gp.relationship}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="w-[1px] h-6 bg-[#E5E5E1]"></div>
-                </div>
+                <TreeRow>
+                  {grandparents.map(gp => <MemberNode key={gp.id} m={gp} />)}
+                </TreeRow>
               )}
 
               {/* Generation 1: Parents */}
               {parents.length > 0 && (
-                <div className="flex flex-col items-center">
-                  <div className="flex gap-4">
-                    {parents.map(p => (
-                      <div key={p.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
-                        <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
-                          {p.profilePhoto ? <img src={p.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : p.name[0]}
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{p.name}</p>
-                          <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{p.relationship}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Stem line down */}
-                  <div className="w-[1px] h-6 bg-[#E5E5E1]"></div>
-                </div>
+                <TreeRow connectAbove={grandparents.length > 0}>
+                  {parents.map(p => <MemberNode key={p.id} m={p} />)}
+                </TreeRow>
               )}
 
               {/* Generation 2: Self, Spouse, Siblings */}
-              <div className="flex flex-col items-center">
-                {(parents.length > 0 || grandparents.length > 0) && <div className="w-[1px] h-2 bg-[#E5E5E1]"></div>}
-                <div className="flex flex-wrap justify-center gap-4">
-                  {/* Me Node */}
-                  <div className="p-3 bg-[#315C4A] border border-[#315C4A] rounded-[16px] flex items-center gap-3 w-44 text-white">
-                    <div className="w-8 h-8 rounded-[16px] bg-white text-[#1A1A1A] flex items-center justify-center text-xs font-semibold">
-                      ME
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold">Owner Account</p>
-                      <p className="text-[10px] text-white/70 uppercase tracking-wider font-mono">Biography Core</p>
-                    </div>
+              <TreeRow connectAbove={parents.length > 0 || grandparents.length > 0}>
+                {/* Me Node */}
+                <div className="p-3 bg-[#315C4A] border border-[#315C4A] rounded-[16px] flex items-center gap-3 w-44 text-white">
+                  <div className="w-8 h-8 rounded-[16px] bg-white text-[#1A1A1A] flex items-center justify-center text-xs font-semibold">
+                    ME
                   </div>
-
-                  {/* Spouses */}
-                  {spouses.map(s => (
-                    <div key={s.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
-                      <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
-                        {s.profilePhoto ? <img src={s.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : s.name[0]}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{s.name}</p>
-                        <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{s.relationship}</p>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Siblings */}
-                  {siblings.map(sib => (
-                    <div key={sib.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
-                      <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
-                        {sib.profilePhoto ? <img src={sib.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : sib.name[0]}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{sib.name}</p>
-                        <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{sib.relationship}</p>
-                      </div>
-                    </div>
-                  ))}
+                  <div>
+                    <p className="text-xs font-semibold">Owner Account</p>
+                    <p className="text-[10px] text-white/70 uppercase tracking-wider font-mono">Biography Core</p>
+                  </div>
                 </div>
-
-                {children.length > 0 && (
-                  <div className="flex flex-col items-center">
-                    <div className="w-[1px] h-6 bg-[#E5E5E1]"></div>
-                  </div>
-                )}
-              </div>
+                {spouses.map(s => <MemberNode key={s.id} m={s} />)}
+                {siblings.map(sib => <MemberNode key={sib.id} m={sib} />)}
+              </TreeRow>
 
               {/* Generation 3: Children */}
               {children.length > 0 && (
-                <div className="flex flex-col items-center">
-                  <div className="flex gap-4">
-                    {children.map(c => (
-                      <div key={c.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
-                        <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
-                          {c.profilePhoto ? <img src={c.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : c.name[0]}
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{c.name}</p>
-                          <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{c.relationship}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {grandchildren.length > 0 && (
-                    <div className="flex flex-col items-center">
-                      <div className="w-[1px] h-6 bg-[#E5E5E1]"></div>
-                    </div>
-                  )}
-                </div>
+                <TreeRow connectAbove>
+                  {children.map(c => <MemberNode key={c.id} m={c} />)}
+                </TreeRow>
               )}
 
               {/* Generation 4: Grandchildren */}
               {grandchildren.length > 0 && (
-                <div className="flex gap-4">
-                  {grandchildren.map(gc => (
-                    <div key={gc.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
-                      <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
-                        {gc.profilePhoto ? <img src={gc.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : gc.name[0]}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{gc.name}</p>
-                        <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{gc.relationship}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <TreeRow connectAbove>
+                  {grandchildren.map(gc => <MemberNode key={gc.id} m={gc} />)}
+                </TreeRow>
               )}
 
               {/* Extended Family & Circle */}
               {others.length > 0 && (
-                <div className="flex flex-col items-center pt-2">
+                <div className="flex flex-col items-center">
+                  <div className="w-[1px] h-6 bg-[#E5E5E1]"></div>
                   <span className="text-[9px] text-[#8A8F8B] font-medium uppercase tracking-[0.12em] font-mono mb-2">Extended Family &amp; Circle</span>
-                  <div className="flex flex-wrap justify-center gap-4">
-                    {others.map(o => (
-                      <div key={o.id} className="p-3 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center gap-3 w-44">
-                        <div className="w-8 h-8 rounded-[16px] bg-white border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-xs font-medium uppercase">
-                          {o.profilePhoto ? <img src={o.profilePhoto} className="w-full h-full rounded-[16px] object-cover" /> : o.name[0]}
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-[#1A1A1A] truncate max-w-[120px]">{o.name}</p>
-                          <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider">{o.relationship}</p>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex flex-wrap justify-center gap-4 pt-2">
+                    {others.map(o => <MemberNode key={o.id} m={o} />)}
                   </div>
                 </div>
               )}
@@ -374,18 +313,27 @@ export default function FamilyCircle({ onFamilyChanged, guestMode }: FamilyCircl
                 {members.map(member => (
                   <div key={member.id} className="p-5 rounded-[16px] bg-white border border-[#E5E5E1] flex flex-col justify-between hover:border-[#315C4A] transition-all">
                     <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-[16px] bg-[#F1EFEC] border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-sm font-semibold uppercase">
-                          {member.profilePhoto ? (
-                            <img src={member.profilePhoto} alt={member.name} className="w-full h-full object-cover rounded-[16px]" />
-                          ) : member.name[0]}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-[16px] bg-[#F1EFEC] border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-sm font-semibold uppercase">
+                            {member.profilePhoto ? (
+                              <img src={member.profilePhoto} alt={member.name} className="w-full h-full object-cover rounded-[16px]" />
+                            ) : member.name[0]}
+                          </div>
+                          <div>
+                            <h4 className="font-serif italic text-lg text-[#1A1A1A]">{member.name}</h4>
+                            <span className="text-[9px] px-2 py-0.5 bg-[#F1EFEC] text-[#1A1A1A] font-medium uppercase rounded-[16px] border border-[#E5E5E1] font-mono tracking-wider">
+                              {member.relationship}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-serif italic text-lg text-[#1A1A1A]">{member.name}</h4>
-                          <span className="text-[9px] px-2 py-0.5 bg-[#F1EFEC] text-[#1A1A1A] font-medium uppercase rounded-[16px] border border-[#E5E5E1] font-mono tracking-wider">
-                            {member.relationship}
-                          </span>
-                        </div>
+                        {member.profilePhoto ? (
+                          <img src={member.profilePhoto} alt={member.name} className="w-16 h-16 object-cover rounded-[16px] border border-[#E5E5E1] flex-shrink-0" />
+                        ) : (
+                          <div className="w-16 h-16 rounded-[16px] bg-[#F1EFEC] border border-[#E5E5E1] flex items-center justify-center text-[#1A1A1A] text-lg font-serif italic uppercase flex-shrink-0">
+                            {member.name[0]}
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-1.5 text-xs font-sans">

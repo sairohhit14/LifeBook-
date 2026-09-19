@@ -52,7 +52,7 @@ if (getApps().length === 0) {
 }
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || "3000", 10);
 
 // Enable CORS for all routes
 // ponytail: wildcard origin on an authenticated API — tighten once the production
@@ -620,6 +620,31 @@ function calculateCompletion(userId: string, db: any): number {
   return Math.min(percentage, 100);
 }
 
+// Shared email-address guard: one check used by every capsule/message write path.
+// ponytail: simple regex (not RFC-complete) — upgrade path is a validator lib if stricter rules are needed.
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+}
+
+// True when a REAL inbox delivery transport exists (per-user Settings config or
+// server env). Without this, sendEmail falls back to an Ethereal test account
+// that NEVER reaches Gmail — capsule routes must refuse to fake-deliver then.
+function hasRealEmailTransport(config?: any): boolean {
+  const protocol = config?.protocol || process.env.EMAIL_PROTOCOL || "SMTP";
+  if (protocol === "Resend") {
+    return !!((config?.resendApiKey || process.env.RESEND_API_KEY || "").trim());
+  }
+  return !!((config?.smtpHost || process.env.SMTP_HOST || "").trim()
+    && (config?.smtpUser || process.env.SMTP_USER || "").trim()
+    && (config?.smtpPass || process.env.SMTP_PASS || "").trim());
+}
+
+const EMAIL_NOT_CONFIGURED_MSG =
+  "Email delivery is not configured, so this capsule was NOT sent to Gmail. " +
+  "Configure a real sender in Settings → Email Delivery Configuration " +
+  "(e.g. SMTP host smtp.gmail.com, your Gmail address, and a Gmail App Password), " +
+  "then retry delivery.";
+
 // Core Email Dispatch helper (Nodemailer SMTP & Resend API)
 async function sendEmail({
   to,
@@ -640,7 +665,9 @@ async function sendEmail({
   const smtpPort = parseInt(config?.smtpPort || process.env.SMTP_PORT || "587", 10);
   const smtpUser = config?.smtpUser || process.env.SMTP_USER || "";
   const smtpPass = config?.smtpPass || process.env.SMTP_PASS || "";
-  const smtpFrom = config?.smtpFrom || process.env.SMTP_FROM || '"LifeBook" <no-reply@lifebook.com>';
+  // Prefer the authenticated Gmail account as sender: providers (notably
+  // Gmail) reject or rewrite a From address that isn't the login account.
+  const smtpFrom = config?.smtpFrom || smtpUser || process.env.SMTP_FROM || '"LifeBook" <no-reply@lifebook.com>';
 
   const resendApiKey = config?.resendApiKey || process.env.RESEND_API_KEY || "";
   const resendFrom = config?.resendFrom || process.env.RESEND_FROM || "onboarding@resend.dev";
@@ -1091,42 +1118,57 @@ app.post("/api/auth/family-login", authRateLimiter, (req, res) => {
 // Google identity. Identity comes from Firebase Auth on the client; all user
 // DATA lives in db.json / Supabase, same as password registration.
 app.post("/api/auth/google", authRateLimiter, async (req, res) => {
-  const { email, name, googleId } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
+  const { credential } = req.body;
+  if (!credential || typeof credential !== "string") {
+    return res.status(400).json({ error: "Google credential is required" });
   }
 
   try {
+    // Real Google authentication: the client sends a Firebase Auth ID token
+    // from the Google sign-in popup; it is verified server-side before the
+    // identity is trusted. The identity must never come from the request body.
+    let email = "";
+    let name = "";
+    let googleId = "";
+
+    if (getApps().length > 0) {
+      try {
+        const decoded = await getAuth().verifyIdToken(credential, true);
+        email = String(decoded.email || "");
+        name = String(decoded.name || "");
+        googleId = String(decoded.uid);
+        if (!email) {
+          return res.status(401).json({ error: "Your Google account has no email address." });
+        }
+      } catch (err: any) {
+        console.error("[Auth] Google ID token verification failed:", err?.code || err?.message);
+        return res.status(401).json({ error: "Google sign-in could not be verified. Please try again." });
+      }
+    } else {
+      // ponytail: demo-only fallback while the deployment has no Firebase
+      // Admin credentials. Accepts explicit demo identities ("email|name")
+      // gated behind DEMO_INSECURE_GOOGLE=1; never enabled silently.
+      // Upgrade path: configure FIREBASE_* creds and remove this branch.
+      if (process.env.DEMO_INSECURE_GOOGLE !== "1") {
+        return res.status(501).json({ error: "Google sign-in is not configured on this server yet." });
+      }
+      const [demoEmail, demoName] = String(credential).split("|");
+      if (!demoEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(demoEmail)) {
+        return res.status(400).json({ error: "Invalid demo credential format" });
+      }
+      email = demoEmail.toLowerCase();
+      name = demoName || "";
+      // Stable pseudo-id per demo email so repeat sign-ins map to one account
+      googleId = `google_demo_${crypto.createHash("sha256").update(email).digest("hex").slice(0, 24)}`;
+    }
+
     const db = readDb();
-    let user = db.users.find((u: any) => u.email.toLowerCase() === String(email).toLowerCase());
+    let user = db.users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
 
     if (!user) {
-      let userId = googleId || `google_${crypto.randomUUID()}`;
-
-      // Best-effort mirror into Firebase Auth so the identity exists there too
-      if (getApps().length > 0) {
-        try {
-          const auth = getAuth();
-          const userRecord = await auth.createUser({
-            email: email,
-            displayName: name || email,
-            ...(googleId ? { uid: googleId } : {}),
-          });
-          userId = userRecord.uid;
-        } catch (fbErr: any) {
-          if (fbErr?.code === "auth/email-already-exists" || fbErr?.code === "auth/uid-already-exists") {
-            try {
-              const existing = await getAuth().getUserByEmail(email);
-              userId = existing.uid;
-            } catch { /* keep local id */ }
-          }
-          // Any other Firebase failure: continue with the local identity
-        }
-      }
-
       const legacyKey = generateLegacyKey();
       user = {
-        id: userId,
+        id: googleId || `google_${crypto.randomUUID()}`,
         name: name || email.split("@")[0],
         email,
         password: "", // OAuth identities have no local password
@@ -1137,7 +1179,7 @@ app.post("/api/auth/google", authRateLimiter, async (req, res) => {
         createdAt: new Date().toISOString()
       };
       db.users.push(user);
-      addNotification(userId, "Welcome to LifeBook!", `Hello ${user.name}, welcome to your digital legacy space. Start logging memories, creating your biography, and sharing your custom Legacy Key: ${legacyKey} with your descendants.`);
+      addNotification(user.id, "Welcome to LifeBook!", `Hello ${user.name}, welcome to your digital legacy space. Start logging memories, creating your biography, and sharing your custom Legacy Key: ${legacyKey} with your descendants.`);
       writeDb(db);
     }
 
@@ -1269,6 +1311,11 @@ app.post("/api/upload", authMiddleware, async (req, res) => {
 });
 
 /* ================= DASHBOARD STATS ================= */
+
+// Health check for uptime monitoring (no sensitive diagnostics exposed)
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true, uptimeSeconds: Math.round(process.uptime()), timestamp: new Date().toISOString() });
+});
 
 app.get("/api/dashboard/stats", authMiddleware, (req: any, res) => {
   const userId = req.userId;
@@ -1489,6 +1536,10 @@ app.post("/api/messages", authMiddleware, (req: any, res) => {
     return res.status(400).json({ error: "Missing required legacy message fields" });
   }
 
+  if (!isValidEmail(recipientEmail)) {
+    return res.status(400).json({ error: "Recipient email is not a valid email address — the capsule cannot be delivered to it." });
+  }
+
   let finalDeliveryUtc = reqUtc || "";
   if (!finalDeliveryUtc && deliveryDate) {
     const formattedTime = deliveryTime ? (deliveryTime.length === 5 ? `${deliveryTime}:00` : deliveryTime) : "00:00:00";
@@ -1537,6 +1588,9 @@ app.put("/api/messages/:id", authMiddleware, (req: any, res) => {
   }
 
   const existingMsg = db.messages[index];
+  if (recipientEmail !== undefined && !isValidEmail(recipientEmail)) {
+    return res.status(400).json({ error: "Recipient email is not a valid email address — the capsule cannot be delivered to it." });
+  }
   const updatedDate = deliveryDate !== undefined ? deliveryDate : existingMsg.deliveryDate;
   const updatedTime = deliveryTime !== undefined ? deliveryTime : existingMsg.deliveryTime;
 
@@ -1585,10 +1639,24 @@ app.post("/api/messages/:id/deliver", authMiddleware, async (req: any, res) => {
 
   const msg = db.messages[index];
 
+  if (!isValidEmail(msg.recipientEmail)) {
+    return res.status(400).json({ error: "Recipient email is not a valid email address — the capsule cannot be delivered to it." });
+  }
+
   try {
     console.log(`[Manual Delivery] Attempting instant dispatch for message ID: ${msg.id}`);
     const user = db.users.find((u: any) => u.id === msg.userId);
     const emailConfig = user?.emailConfig;
+
+    // Never fake-deliver: without a real transport the mail would only land in
+    // an Ethereal test inbox, never in the recipient's real Gmail account.
+    if (!hasRealEmailTransport(emailConfig)) {
+      db.messages[index].status = "failed";
+      db.messages[index].error = EMAIL_NOT_CONFIGURED_MSG;
+      addNotification(userId, "⚠️ Message Delivery Failed", `Your legacy message "${msg.title}" could not be sent to ${msg.recipientEmail}. ${EMAIL_NOT_CONFIGURED_MSG}`, db);
+      writeDb(db);
+      return res.status(500).json({ error: EMAIL_NOT_CONFIGURED_MSG });
+    }
 
     const emailContent = `
       <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #e5e5e1; background-color: #f9f7f2; color: #1a1a1a;">
@@ -2056,6 +2124,107 @@ app.delete("/api/stories/:id", authMiddleware, (req: any, res) => {
 
 /* ================= AI COMPANION (CHAT) ================= */
 
+/* ============ Companion tuning (per-user personalization) ============
+ * Each user gets a learned profile (stored in db.companionProfiles[userId])
+ * so the companion speaks differently to different people: it mirrors the
+ * user's own tone/length habits, steers toward their recurring interests,
+ * and honors explicit preferences set via PATCH /api/chat/preferences.
+ * Analysis is incremental (only the new message is scanned) and runs inside
+ * POST /api/chat on the same db object the route already persists.
+ */
+// ponytail: keyword-frequency + style-signal heuristic, not an ML model —
+// counts and averages only. Upgrade path: embeddings/topic-model over history.
+const TUNING_STOPWORDS = new Set(
+  "the,a,an,and,or,but,for,with,from,that,this,these,those,are,was,were,been,have,has,had,will,would,should,could,what,when,where,which,who,whom,how,why,not,no,yes,you,your,yours,our,we,they,them,their,there,here,about,into,over,after,before,just,like,more,most,very,can,all,any,one,two,its,it's,don't,does,did,than,then,also,only,well,because,tell,please,hello,hi,hey,kya,hai,hai,mein,aur,hai".split(",")
+);
+const TUNING_TONES = ["auto", "warm", "playful", "respectful", "curious"] as const;
+const TUNING_VERBOSITIES = ["auto", "concise", "balanced", "detailed"] as const;
+const TUNING_MAX_TOPICS = 40;
+
+function getCompanionProfile(db: any, userId: string) {
+  if (!db.companionProfiles) db.companionProfiles = {};
+  let p = db.companionProfiles[userId];
+  if (!p) {
+    p = {
+      userId,
+      messageCount: 0,
+      totalUserChars: 0,
+      questionCount: 0,
+      emojiCount: 0,
+      topics: {} as Record<string, number>,
+      preferences: { tone: "auto", verbosity: "auto", focusTopics: [] as string[] },
+      updatedAt: new Date().toISOString(),
+    };
+    db.companionProfiles[userId] = p;
+  }
+  if (!p.preferences) p.preferences = { tone: "auto", verbosity: "auto", focusTopics: [] };
+  if (!p.topics) p.topics = {};
+  return p;
+}
+
+// Fold one user message into the stored profile; returns the profile.
+function analyzeCompanionSignal(db: any, userId: string, text: string) {
+  const p = getCompanionProfile(db, userId);
+  const t = String(text || "");
+  p.messageCount += 1;
+  p.totalUserChars += t.length;
+  if (t.includes("?")) p.questionCount += 1;
+  const emojis = t.match(/\p{Extended_Pictographic}/gu);
+  if (emojis) p.emojiCount += emojis.length;
+  for (const raw of t.toLowerCase().split(/[^a-z\u00c0-\u024f\u1e00-\u1eff]+/)) {
+    if (raw.length < 3 || TUNING_STOPWORDS.has(raw)) continue;
+    p.topics[raw] = (p.topics[raw] || 0) + 1;
+  }
+  const entries = Object.entries(p.topics).sort((a: any, b: any) => (b[1] as number) - (a[1] as number));
+  if (entries.length > TUNING_MAX_TOPICS) {
+    p.topics = Object.fromEntries(entries.slice(0, TUNING_MAX_TOPICS));
+  }
+  p.updatedAt = new Date().toISOString();
+  return p;
+}
+
+// Resolve effective tone/verbosity/topics for the prompt. Explicit user
+// choices win; otherwise fall back to what was learned from their style.
+function describeCompanionTuning(p: any) {
+  const avgLen = p.messageCount ? Math.round(p.totalUserChars / p.messageCount) : 0;
+  const questionRate = p.messageCount ? p.questionCount / p.messageCount : 0;
+  const emojiRate = p.messageCount ? p.emojiCount / p.messageCount : 0;
+  const learnedTone =
+    emojiRate > 0.3 ? "playful"
+    : questionRate > 0.5 ? "curious"
+    : avgLen > 200 ? "respectful"
+    : "warm";
+  const learnedVerbosity = avgLen < 60 ? "concise" : avgLen > 200 ? "detailed" : "balanced";
+  const topTopics = Object.entries(p.topics)
+    .sort((a: any, b: any) => (b[1] as number) - (a[1] as number))
+    .slice(0, 5)
+    .map(([term]) => term);
+  const pref = p.preferences || {};
+  return {
+    tone: pref.tone && pref.tone !== "auto" ? pref.tone : learnedTone,
+    toneSource: pref.tone && pref.tone !== "auto" ? "chosen by the user" : "learned from their style",
+    verbosity: pref.verbosity && pref.verbosity !== "auto" ? pref.verbosity : learnedVerbosity,
+    verbositySource: pref.verbosity && pref.verbosity !== "auto" ? "chosen by the user" : "learned from their style",
+    interests: [...(pref.focusTopics || []), ...topTopics].slice(0, 8),
+    messageCount: p.messageCount,
+    avgLen,
+  };
+}
+
+function tuningPromptBlock(userName: string, p: any): string {
+  if (!p || !p.messageCount) return "";
+  const t = describeCompanionTuning(p);
+  const lengthHint =
+    t.verbosity === "concise" ? "Keep replies short and to the point (a few sentences)."
+    : t.verbosity === "detailed" ? "The user enjoys rich, detailed replies — feel free to elaborate warmly."
+    : "Keep replies a comfortable medium length.";
+  return `--- COMPANION TUNING (personal to ${userName}, from ${t.messageCount} past exchanges) ---
+- Tone: ${t.tone} (${t.toneSource}). Speak in this tone, not a generic one.
+- Reply length: ${t.verbosity} (${t.verbositySource}). ${lengthHint}
+- Recurring interests: ${t.interests.length ? t.interests.join(", ") : "none detected yet"}. Weave these in where natural.
+This profile is unique to ${userName} — a different user gets different tuning.`;
+}
+
 app.get("/api/chat/history", authMiddleware, (req: any, res) => {
   const userId = req.userId;
   const db = readDb();
@@ -2074,6 +2243,10 @@ app.get("/api/chat/history", authMiddleware, (req: any, res) => {
 app.post("/api/chat", authMiddleware, async (req: any, res) => {
   const userId = req.userId;
   const { message } = req.body;
+
+  if (req.body?.language !== undefined && !findLanguage(String(req.body.language))) {
+    return res.status(400).json({ error: "Unsupported language" });
+  }
 
   if (!message) {
     return res.status(400).json({ error: "Message is required" });
@@ -2115,6 +2288,11 @@ app.post("/api/chat", authMiddleware, async (req: any, res) => {
     date: new Date().toISOString()
   };
   db.chatHistory[userId].push(userMessageObj);
+
+  // Tune the companion to this user: fold the new message into their stored
+  // profile (persisted with the db write at the end of this route).
+  const tuningProfile = analyzeCompanionSignal(db, userId, message);
+  const tuningBlock = tuningPromptBlock(user?.name || "the user", tuningProfile);
 
   // Compile context of all user memory data
   const memoriesContextText = userMemories.length > 0 
@@ -2158,8 +2336,17 @@ app.post("/api/chat", authMiddleware, async (req: any, res) => {
     ? userMessages.map((msg: any) => `- Message to ${msg.recipientName} (${msg.recipientEmail}): Delivery - ${msg.deliveryOption} on ${msg.deliveryDate || 'scheduled date'}. Content: "${msg.content?.substring(0, 150)}..."`).join("\n")
     : "No legacy time capsule messages scheduled yet.";
 
+  const language = typeof req.body?.language === "string" ? findLanguage(req.body.language) : undefined;
+  const languageLine = language
+    ? `LANGUAGE: Reply to ${user.name} ONLY in ${language.label} (${language.native}) using its native script. Write numbers and dates naturally in that language. Personal names, street addresses and brand names may stay in their original script if more natural. If the user writes in another language, still reply in ${language.label} unless they explicitly ask you to switch.`
+    : "LANGUAGE: Mirror the language the user writes in.";
+
   const systemInstruction = `You are the empathetic, warm, and highly professional LifeBook AI Legacy Companion for ${user.name}.
 Your job is to act as a loving digital biographer and conversational companion. You help ${user.name} reflect on their life journey, discuss their logged memories, retrieve past details, and prompt them to capture new stories.
+
+ ${languageLine}
+
+${tuningBlock}
 
 CRITICAL INSTRUCTION FOR MEMORY CONTEXT:
 You have complete access to ${user.name}'s digital legacy records. ALWAYS refer to or weave in their specific logged memories, milestones, family members, stories, documents, and messages when they ask about their past or related topics. Be proud and specific when recalling their exact memory details (names, dates, locations, quotes).
@@ -2193,7 +2380,8 @@ Guidelines:
 1. Speak warmly, empathetically, and conversationally.
 2. Answer questions accurately and proudly using their exact memory records above.
 3. If they ask about something not yet in their records, acknowledge what IS recorded and invite them to share or record that new memory.
-4. Keep answers concise, highly human, and conversational (avoid robotic or repetitive system disclaimers).`;
+4. Keep answers concise, highly human, and conversational (avoid robotic or repetitive system disclaimers).
+5. Honor the COMPANION TUNING profile above when present — it is what makes you personal to this user.`;
 
   try {
     const aiClient = getAiClient();
@@ -2297,6 +2485,68 @@ app.delete("/api/chat/history", authMiddleware, (req: any, res) => {
   ];
   writeDb(db);
   res.json({ success: true, history: db.chatHistory[userId] });
+});
+
+// Returns the caller's learned tuning profile plus explicit preferences.
+app.get("/api/chat/preferences", authMiddleware, (req: any, res) => {
+  const userId = req.userId;
+  const db = readDb();
+  const p = getCompanionProfile(db, userId);
+  writeDb(db); // persist lazy-created profile so guests/empty users read stable state
+  const t = describeCompanionTuning(p);
+  res.json({
+    messageCount: p.messageCount,
+    tone: t.tone,
+    toneSource: t.toneSource,
+    verbosity: t.verbosity,
+    verbositySource: t.verbositySource,
+    interests: t.interests,
+    preferences: p.preferences,
+    updatedAt: p.updatedAt,
+  });
+});
+
+// Lets the user explicitly steer the companion (tone/verbosity/focus topics).
+// Anything not "auto" overrides what was learned from their behaviour.
+app.patch("/api/chat/preferences", authMiddleware, (req: any, res) => {
+  const userId = req.userId;
+  const { tone, verbosity, focusTopics } = req.body ?? {};
+  const db = readDb();
+  const p = getCompanionProfile(db, userId);
+
+  if (tone !== undefined) {
+    if (!(TUNING_TONES as readonly string[]).includes(tone)) {
+      return res.status(400).json({ error: `Tone must be one of: ${(TUNING_TONES as readonly string[]).join(", ")}` });
+    }
+    p.preferences.tone = tone;
+  }
+  if (verbosity !== undefined) {
+    if (!(TUNING_VERBOSITIES as readonly string[]).includes(verbosity)) {
+      return res.status(400).json({ error: `Verbosity must be one of: ${(TUNING_VERBOSITIES as readonly string[]).join(", ")}` });
+    }
+    p.preferences.verbosity = verbosity;
+  }
+  if (focusTopics !== undefined) {
+    if (!Array.isArray(focusTopics) || focusTopics.length > 10
+        || focusTopics.some((s: any) => typeof s !== "string" || !s.trim() || s.length > 40)) {
+      return res.status(400).json({ error: "focusTopics must be an array of up to 10 short strings" });
+    }
+    p.preferences.focusTopics = focusTopics.map((s: string) => s.trim().toLowerCase());
+  }
+
+  p.updatedAt = new Date().toISOString();
+  writeDb(db);
+  const t = describeCompanionTuning(p);
+  res.json({
+    messageCount: p.messageCount,
+    tone: t.tone,
+    toneSource: t.toneSource,
+    verbosity: t.verbosity,
+    verbositySource: t.verbositySource,
+    interests: t.interests,
+    preferences: p.preferences,
+    updatedAt: p.updatedAt,
+  });
 });
 
 /* ================= NOTIFICATIONS ENDPOINTS ================= */
@@ -2462,6 +2712,7 @@ app.delete("/api/settings/account", authMiddleware, (req: any, res) => {
   db.stories = db.stories.filter((s: any) => s.userId !== userId);
   db.notifications = db.notifications.filter((n: any) => n.userId !== userId);
   delete db.chatHistory[userId];
+  if (db.companionProfiles) delete db.companionProfiles[userId];
 
   writeDb(db);
   res.json({ success: true });
@@ -2478,7 +2729,7 @@ app.get("/api/settings/email-config", authMiddleware, (req: any, res) => {
   }
   res.json(user.emailConfig || {
     protocol: "SMTP",
-    smtpHost: "",
+    smtpHost: "smtp.gmail.com",
     smtpPort: "587",
     smtpUser: "",
     smtpPass: "",
@@ -2513,6 +2764,35 @@ app.put("/api/settings/email-config", authMiddleware, (req: any, res) => {
   writeDb(db);
 
   res.json({ success: true, emailConfig: db.users[index].emailConfig });
+});
+
+// Sends a test email through the user's saved config (or server env fallback)
+// so real Gmail delivery can be verified before scheduling capsules.
+app.post("/api/settings/email-config/test", authMiddleware, async (req: any, res) => {
+  const userId = (req as any).userId;
+  const { to } = req.body ?? {};
+  if (!to || !isValidEmail(to)) {
+    return res.status(400).json({ error: "A valid 'to' email address is required to send a test email." });
+  }
+  const db = readDb();
+  const user = db.users.find((u: any) => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  if (!hasRealEmailTransport(user.emailConfig)) {
+    return res.status(400).json({ error: EMAIL_NOT_CONFIGURED_MSG });
+  }
+  try {
+    const result = await sendEmail({
+      to: String(to).trim(),
+      subject: "LifeBook test email — your delivery is working ✅",
+      html: `<p>Hello ${user.name || "there"},</p><p>This is a test email from your LifeBook vault. If you received this in Gmail, scheduled time-capsules will deliver to recipient inboxes correctly.</p>`,
+      config: user.emailConfig,
+    });
+    res.json({ success: true, messageId: result.messageId });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Test email failed to send" });
+  }
 });
 
 /* ================= GOOGLE FLOW AI VIDEO GENERATION ================= */
@@ -2717,6 +2997,30 @@ async function checkAndDeliverScheduledMessages() {
         </p>
             </div>
           `;
+
+          // Never fake-deliver from the scheduler: without a real transport the
+          // mail would only land in an Ethereal test inbox, never Gmail. Park
+          // it as failed with an actionable message instead of flip-flopping.
+          if (!isValidEmail(msg.recipientEmail)) {
+            msg.status = "failed";
+            msg.error = "Recipient email is not a valid email address — the capsule cannot be delivered to it.";
+            updated = true;
+            continue;
+          }
+          if (!hasRealEmailTransport(emailConfig)) {
+            if (msg.status !== "failed" || msg.error !== EMAIL_NOT_CONFIGURED_MSG) {
+              msg.status = "failed";
+              msg.error = EMAIL_NOT_CONFIGURED_MSG;
+              addNotification(
+                msg.userId,
+                "⚠️ Scheduled Capsule Delivery Failed",
+                `Your legacy message "${msg.title}" scheduled for ${msg.recipientEmail} was NOT sent. ${EMAIL_NOT_CONFIGURED_MSG}`,
+                db
+              );
+              updated = true;
+            }
+            continue;
+          }
 
           try {
             const deliveryResult = await sendEmail({
@@ -3229,11 +3533,15 @@ import {
   findBannedPhrases,
   toChapter,
   sourceFingerprint,
+  buildTranslationPrompt,
+  validateTranslation,
+  type TranslatableChapter,
   type PipelineMemory,
   type PipelineMilestone,
   type ChapterPlan,
   type SourceConflict,
 } from "./server/autobiography-pipeline";
+import { INDIAN_LANGUAGES, findLanguage } from "./src/languages";
 
 // ---------------------------------------------------------------- helpers
 
@@ -3342,6 +3650,33 @@ export async function runGenerationForTests(auto: any, user: any, db: any, onlyI
   return runGeneration(auto, user, db, onlyIds);
 }
 
+function isTransientAiError(err: any): boolean {
+  const msg = String(err?.message ?? "");
+  return msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") ||
+    msg.includes("503") || msg.includes("UNAVAILABLE") || msg.includes("overloaded");
+}
+
+/**
+ * Bounded retry for transient AI failures (quota windows, brief outages).
+ * Generation is idempotent per chapter, so retrying is safe (§45). Never
+ * loops unboundedly: 3 attempts total, capped delays.
+ */
+async function generateChapterWithRetry(aiClient: any, params: any, attempts = 3) {
+  let lastErr: any;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await generateContentWithFallback(aiClient, params);
+    } catch (err: any) {
+      lastErr = err;
+      if (!isTransientAiError(err) || i === attempts - 1) throw err;
+      const delay = Math.min(60_000, 15_000 * (i + 1));
+      console.warn(`[autobiography] transient AI error, retrying in ${delay / 1000}s (attempt ${i + 2}/${attempts})`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
 async function runGeneration(auto: any, user: any, db: any, onlyIds?: string[]) {
   const userId = auto.userId;
   const { memories, milestones } = collectSources(db, userId);
@@ -3430,7 +3765,7 @@ async function runGeneration(auto: any, user: any, db: any, onlyIds?: string[]) 
         memoriesById,
         conflicts,
       });
-      const result = await generateContentWithFallback(aiClient, {
+      const result = await generateChapterWithRetry(aiClient, {
         contents: userPrompt,
         config: {
           systemInstruction: system,
@@ -3480,7 +3815,10 @@ async function runGeneration(auto: any, user: any, db: any, onlyIds?: string[]) 
       ch.updatedAt = new Date().toISOString();
     } catch (err: any) {
       ch.status = "failed";
-      ch.error = "This chapter could not be written. You can retry it.";
+      // Tell people the truth about WHY it failed, in human terms.
+      ch.error = isTransientAiError(err)
+        ? "AI writing is at its daily limit right now. Please try again later today or tomorrow."
+        : "This chapter could not be written. You can retry it.";
       anyFailed = true;
       console.error(`[autobiography] chapter ${i + 1} (${ch.title}) failed:`, err.message);
     }
@@ -3490,7 +3828,12 @@ async function runGeneration(auto: any, user: any, db: any, onlyIds?: string[]) 
   const resolved = auto.chapters.filter((c: any) => c.status === "ready" || c.status === "failed").length;
   auto.progress = { total: auto.chapters.length, done: resolved };
   auto.status = anyFailed ? "failed" : "ready_for_review";
-  if (anyFailed) auto.lastError = "Some chapters could not be written. You can retry them.";
+  if (anyFailed) {
+    const quota = auto.chapters.some((c: any) => /daily limit/.test(c.error ?? ""));
+    auto.lastError = quota
+      ? "AI writing has hit its daily limit. Your story is safe — try again later today or tomorrow."
+      : "Some chapters could not be written. You can retry them.";
+  }
   auto.updatedAt = new Date().toISOString();
   writeDb(db);
 
@@ -3642,6 +3985,143 @@ app.patch("/api/autobiography/chapters/:chapterId", authMiddleware, (req: expres
   auto.updatedAt = new Date().toISOString();
   writeDb(db);
   res.json(publicAuto(auto, db, false));
+});
+
+/**
+ * Translated copy of the finished autobiography (major Indian languages).
+ * GET /api/autobiography/translate?lang=hi-IN
+ *
+ * Whole-book AI translation, cached on the autobiography doc under
+ * `translations[lang]`. The cache is keyed to the book's sourceHash +
+ * updatedAt, so any regeneration or user edit invalidates it — readers
+ * never see a translation older than the book itself. Guests may read a
+ * cached translation of a PUBLISHED book but never trigger AI (cost control,
+ * §44).
+ */
+app.get("/api/autobiography/translate", authMiddleware, async (req: express.Request, res: express.Response) => {
+  const userId = (req as any).userId as string;
+  const isGuest = !!(req as any).isGuest;
+  const lang = findLanguage(String(req.query.lang ?? ""));
+  if (!lang) return res.status(400).json({ error: "Unsupported language" });
+  if (lang.code === "en-IN") {
+    return res.status(400).json({ error: "English is the original language of the book." });
+  }
+
+  const db = readDb();
+  const auto = isGuest
+    ? db.autobiographies?.find((a: any) => a.userId === userId && a.status === "published")
+    : getAutobiography(db, userId);
+  if (!auto || auto.status !== "published" && auto.status !== "ready_for_review") {
+    return res.status(404).json({ error: "Write your autobiography first — there is nothing to translate yet." });
+  }
+  const readyChapters = (auto.chapters || []).filter((c: any) => c.status === "ready");
+  if (readyChapters.length === 0) {
+    return res.status(404).json({ error: "Write your autobiography first — there is nothing to translate yet." });
+  }
+
+  // Freshness = sources + chapter-text stamp. Book-level touches (publish,
+  // unpublish) don't change chapter text, so a cached translation survives
+  // them; any chapter edit or regeneration does change the stamp.
+  const bookStamp = JSON.stringify((auto.chapters || []).map((c: any) => [c.id, c.updatedAt]));
+  const cached = auto.translations?.[lang.code];
+  const fresh = cached && cached.sourceHash === auto.sourceHash && cached.bookStamp === bookStamp;
+  if (cached && fresh) return res.json({ lang: lang.code, ...cached });
+
+  if (isGuest) {
+    // Guests read the owner's cached translation; they can never spend AI.
+    return res.status(cached ? 409 : 404).json({
+      error: cached
+        ? "This translation is out of date. Ask the owner to refresh it."
+        : "No translation available yet. Ask the owner to open this language first.",
+    });
+  }
+
+  // Test seam: honor the injected fake client so route wiring is testable
+  // without real credentials (same pattern as the generation core).
+  try { aiClientOverride ?? getAiClient(); } catch {
+    return res.status(503).json({ error: "AI translation is not configured on this server. Set GEMINI_API_KEY to enable it." });
+  }
+  if (autoGenRateLimited(userId)) {
+    return res.status(429).json({ error: "Please wait a moment before translating again." });
+  }
+
+  const book: TranslatableChapter[] = readyChapters
+    .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+    .map((c: any) => ({
+      id: c.id, title: c.title, subtitle: c.subtitle, sections: c.sections,
+      photoIds: c.photoIds ?? [], captions: c.captions ?? {},
+    }));
+  const { system, user: userPrompt } = buildTranslationPrompt({
+    title: auto.title, subtitle: auto.subtitle, language: lang, chapters: book,
+  });
+  try {
+    const aiClient = aiClientOverride ?? getAiClient();
+    const result = await generateChapterWithRetry(aiClient, {
+      contents: userPrompt,
+      config: {
+        systemInstruction: system,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            subtitle: { type: Type.STRING },
+            chapters: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  index: { type: Type.NUMBER, description: "input chapter number, 1-based" },
+                  title: { type: Type.STRING },
+                  subtitle: { type: Type.STRING },
+                  paragraphs: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  captions: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: { photoId: { type: Type.STRING }, caption: { type: Type.STRING } },
+                      required: ["photoId", "caption"],
+                    },
+                  },
+                },
+                required: ["index", "title", "paragraphs"],
+              },
+            },
+          },
+          required: ["title", "chapters"],
+        },
+      },
+    });
+    const parsed = JSON.parse(result.text || "{}");
+    // Map AI chapters (index = book order) back onto real chapter ids.
+    const withIds = {
+      ...parsed,
+      chapters: (parsed.chapters ?? []).map((item: any, i: number) => ({ ...item, index: i + 1 })),
+    };
+    const check = validateTranslation(withIds, { title: auto.title, subtitle: auto.subtitle, chapters: book });
+    if (!check.ok) throw new Error(`AI translation rejected: ${(check as any).reason}`);
+
+    auto.translations = auto.translations ?? {};
+    auto.translations[lang.code] = {
+      title: check.title,
+      subtitle: check.subtitle,
+      chapters: check.chapters.map((c) => ({
+        id: c.id, title: c.title, subtitle: c.subtitle, sections: c.sections, captions: c.captions,
+      })),
+      sourceHash: auto.sourceHash,
+      bookStamp,
+      translatedAt: new Date().toISOString(),
+    };
+    writeDb(db);
+    return res.json({ lang: lang.code, ...auto.translations[lang.code] });
+  } catch (err: any) {
+    console.error("[autobiography] translation failed:", err.message);
+    return res.status(502).json({
+      error: isTransientAiError(err)
+        ? "AI translation is at its daily limit right now. Please try again later today or tomorrow."
+        : "We couldn't translate your story. Please try again.",
+    });
+  }
 });
 
 app.post("/api/autobiography/publish", authMiddleware, (req: express.Request, res: express.Response) => {

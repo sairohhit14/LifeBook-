@@ -138,6 +138,18 @@ serverless) and everything else to the SPA. Set the same environment variables i
 Vercel project — `SESSION_SECRET` and the Supabase pair are the ones that matter;
 without Supabase, the filesystem-backed db.json in `/tmp` is ephemeral per instance.
 
+## Deployment (Render — single service)
+
+The server binds `process.env.PORT` and serves the built SPA + API from one process,
+so Render's "Web Service" works with:
+
+- **Build command:** `npm install && npm run build`
+- **Start command:** `npm start`
+- Health check path: `/api/health`
+- Set the same environment variables (`SESSION_SECRET` + Supabase pair matter most).
+  With Supabase configured, data and uploads persist across deploys/instances.
+- Deep SPA routes (`/vault`, `/settings`, …) fall back to `index.html` automatically.
+
 Rollback: redeploy a previous Vercel build; data rollback is the Supabase project's
  PITR/backup — configure it before real users, and test a restore.
 

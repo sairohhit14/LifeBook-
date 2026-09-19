@@ -126,6 +126,10 @@ export default function LegacyMessages({ onMessagesChanged, guestMode }: LegacyM
       setError("Please fill in all required message fields.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim())) {
+      setError("Recipient email doesn't look valid — the capsule can only be delivered to a real email address.");
+      return;
+    }
 
     let deliveryDateUtc = "";
     if (deliveryDate) {
@@ -184,6 +188,7 @@ export default function LegacyMessages({ onMessagesChanged, guestMode }: LegacyM
             <span>Legacy Messages Capsule</span>
           </h2>
           <p className="text-[#454A46] text-xs">Write, record, and schedule digital time-capsule letters that deliver to family on designated future dates or milestones.</p>
+          <p className="text-[#8A6B3B] text-[11px] mt-1">Real Gmail delivery needs a sender configured in Settings → Email Delivery Configuration (e.g. smtp.gmail.com + Gmail App Password). Without it, delivery is refused with an error instead of silently going nowhere.</p>
         </div>
         {!guestMode && (
           <button

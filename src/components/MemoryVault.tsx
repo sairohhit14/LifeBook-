@@ -149,6 +149,10 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
     setMediaFiles(prev => prev.filter(m => m.id !== id));
   };
 
+  const handleCaptionChange = (id: string, caption: string) => {
+    setMediaFiles(prev => prev.map(m => m.id === id ? { ...m, caption } : m));
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description || !date) {
@@ -427,7 +431,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141A16] via-[#141A16]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end text-white">
                   <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#C9A66B] truncate">{item.memory.title}</span>
-                  <span className="text-xs font-serif italic line-clamp-1">{item.file.name || "Vault Photo"}</span>
+                  <span className="text-xs font-serif italic line-clamp-1">{item.file.caption || item.file.name || "Vault Photo"}</span>
                   <span className="text-[9px] text-[#454A46] flex items-center gap-1 mt-1">
                     <Calendar className="w-2.5 h-2.5 text-[#C9A66B]" />
                     {new Date(item.memory.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short' })}
@@ -651,24 +655,37 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                   </div>
                 )}
 
-                {/* File Previews List */}
+                {/* File Previews List with per-photo text/caption */}
                 {mediaFiles.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div className="grid grid-cols-1 gap-2 mt-2">
                     {mediaFiles.map(file => (
-                      <div key={file.id} className="relative p-2 border border-[#E5E5E1] rounded-[24px] bg-[#F1EFEC] flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          {file.type === "image" && <Image className="w-4 h-4 text-[#C9A66B] flex-shrink-0" />}
-                          {file.type === "video" && <Video className="w-4 h-4 text-[#7E9B89] flex-shrink-0" />}
-                          {file.type === "audio" && <Mic className="w-4 h-4 text-[#4E7A64] flex-shrink-0" />}
-                          <span className="truncate text-[11px] text-[#1E2521] font-medium pr-4">{file.name}</span>
+                      <div key={file.id} className="relative p-2 border border-[#E5E5E1] rounded-[24px] bg-[#F1EFEC] text-xs space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            {file.type === "image" && file.url && (
+                              <img src={file.url} alt="" className="w-10 h-10 object-cover rounded-[16px] border border-[#E5E5E1] flex-shrink-0" />
+                            )}
+                            {file.type === "image" && !file.url && <Image className="w-4 h-4 text-[#C9A66B] flex-shrink-0" />}
+                            {file.type === "video" && <Video className="w-4 h-4 text-[#7E9B89] flex-shrink-0" />}
+                            {file.type === "audio" && <Mic className="w-4 h-4 text-[#4E7A64] flex-shrink-0" />}
+                            <span className="truncate text-[11px] text-[#1E2521] font-medium pr-4">{file.name}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMedia(file.id)}
+                            className="text-[#8A8F8B] hover:text-[#B4543E] transition-colors cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMedia(file.id)}
-                          className="text-[#8A8F8B] hover:text-[#B4543E] transition-colors cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
+                        <input
+                          type="text"
+                          placeholder={file.type === "image" ? "Photo text — e.g. Diwali at grandma's, 1998" : "Attachment note (optional)"}
+                          value={file.caption || ""}
+                          onChange={(e) => handleCaptionChange(file.id, e.target.value)}
+                          maxLength={200}
+                          className="w-full px-3 py-1.5 bg-[#FCFBF7] border border-[#E5E5E1] rounded-[16px] text-[11px] text-[#1E2521] focus:outline-none focus:border-[#C9A66B]"
+                        />
                       </div>
                     ))}
                   </div>
@@ -788,6 +805,11 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                       {viewingMemory.media[activeMediaIndex]?.type}
                     </span>
                   </div>
+                  {viewingMemory.media[activeMediaIndex]?.caption && (
+                    <p className="text-[11px] text-[#E8E6DF] italic font-serif px-1 line-clamp-2">
+                      &ldquo;{viewingMemory.media[activeMediaIndex].caption}&rdquo;
+                    </p>
+                  )}
 
                   {/* Thumbnail Row */}
                   {viewingMemory.media.length > 1 && (
@@ -796,6 +818,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                         <div
                           key={file.id}
                           onClick={() => setActiveMediaIndex(idx)}
+                          title={file.caption || file.name}
                           className={`flex-shrink-0 w-12 h-12 rounded-[24px] overflow-hidden border-2 cursor-pointer transition-all ${
                             idx === activeMediaIndex ? 'border-[#C9A66B] scale-105 shadow-md shadow-[#C9A66B]/10' : 'border-[rgba(252,251,247,0.12)] hover:border-[rgba(252,251,247,0.20)]'
                           }`}

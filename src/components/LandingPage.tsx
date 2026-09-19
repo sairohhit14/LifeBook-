@@ -5,6 +5,11 @@ import { BookOpen, Shield, Heart, Lock, User as UserIcon, Mail, Phone, Calendar,
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../firebase";
 
+const DEMO_ACCOUNTS = [
+  { email: "ananya.demo@lifebook.dev", name: "Ananya Sharma", label: "Ananya — rich personal data" },
+  { email: "marcus.demo@lifebook.dev", name: "Marcus Okafor", label: "Marcus — rich personal data" },
+];
+
 interface LandingPageProps {
   onLoginSuccess: (user: User) => void;
   onEnterGuestMode: (legacyKey: string, familyMemberName: string) => Promise<void>;
@@ -41,12 +46,12 @@ export default function LandingPage({ onLoginSuccess, onEnterGuestMode }: Landin
   const [customGoogleEmail, setCustomGoogleEmail] = useState("");
   const [customGoogleName, setCustomGoogleName] = useState("");
 
-  const handleGoogleLogin = async (selectedEmail: string, selectedName: string, selectedId?: string) => {
+  const handleGoogleLogin = async (selectedEmail: string, selectedName: string, _selectedId?: string) => {
     setError("");
     setLoading(true);
     setShowGooglePicker(false);
     try {
-      const user = await api.loginWithGoogle(selectedEmail, selectedName, selectedId);
+      const user = await api.loginWithGoogle(selectedEmail, selectedName);
       onLoginSuccess(user);
     } catch (err: any) {
       setError(err.message || "We couldn't sign you in with Google. Please try again.");
@@ -55,29 +60,39 @@ export default function LandingPage({ onLoginSuccess, onEnterGuestMode }: Landin
     }
   };
 
+  const handleDemoQuickFill = (demoEmail: string, demoPassword: string) => {
+    setIsLogin(true);
+    setIsFamilyMode(false);
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setError("");
+  };
+
   const triggerGoogleAuth = async () => {
     setError("");
-    setLoading(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
-      const result = await signInWithPopup(auth, provider);
-      const googleUser = result.user;
-      if (googleUser.email) {
-        const user = await api.loginWithGoogle(
-          googleUser.email,
-          googleUser.displayName || "Google User",
-          googleUser.uid
-        );
-        onLoginSuccess(user);
-      } else {
+    if (auth) {
+      try {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
+        const result = await signInWithPopup(auth, provider);
+        const googleUser = result.user;
+        if (googleUser.email) {
+          // Real Google authentication: the ID token is verified server-side.
+          const idToken = await googleUser.getIdToken();
+          const user = await api.loginWithGoogleCredential(idToken);
+          onLoginSuccess(user);
+          return;
+        }
         throw new Error("Could not retrieve email from Google Account.");
+      } catch (err: any) {
+        console.warn("Real Google Auth failed/unavailable, falling back to simulated sandbox picker:", err.message);
+        setError("Google sign-in isn't configured yet. Pick a demo account below to explore, or use email and password.");
+        setShowGooglePicker(true);
       }
-    } catch (err: any) {
-      console.warn("Real Google Auth failed/unavailable, falling back to simulated sandbox picker:", err.message);
+    } else {
+      // No Firebase client config — offer the demo picker directly.
+      setError("Google sign-in isn't configured yet. Pick a demo account below to explore, or use email and password.");
       setShowGooglePicker(true);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -619,6 +634,26 @@ export default function LandingPage({ onLoginSuccess, onEnterGuestMode }: Landin
                   )}
                 </button>
 
+                {isLogin && (
+                  <div className="rounded-[16px] border border-[#E2EBE4] bg-[#E2EBE4]/40 p-3 space-y-2">
+                    <p className="text-[9px] font-mono text-[#454A46] uppercase tracking-widest">Demo accounts — one click to explore</p>
+                    <div className="flex flex-col gap-1.5">
+                      {DEMO_ACCOUNTS.map((acc) => (
+                        <button
+                          key={acc.email}
+                          type="button"
+                          onClick={() => handleDemoQuickFill(acc.email, "demo1234")}
+                          className="flex items-center justify-between gap-2 px-3 py-2 bg-[#FCFBF7] hover:bg-[#E2EBE4]/60 border border-[#E5E5E1] hover:border-[#315C4A] rounded-[10px] text-left transition-all cursor-pointer"
+                        >
+                          <span className="text-xs font-semibold text-[#1E2521]">{acc.name}</span>
+                          <span className="text-[10px] text-[#8A8F8B] font-mono">{acc.email}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-[#8A8F8B]">Password for both: <span className="font-mono">demo1234</span></p>
+                  </div>
+                )}
+
                 <div className="relative flex py-2 items-center">
                   <div className="flex-grow border-t border-[#E5E5E1]"></div>
                   <span className="flex-shrink mx-4 text-[9px] text-[#8A8F8B] uppercase tracking-wider font-bold">Or continue with</span>
@@ -723,20 +758,20 @@ export default function LandingPage({ onLoginSuccess, onEnterGuestMode }: Landin
                 </svg>
               </div>
               <h3 className="text-base font-semibold text-[#1E2521]">Sign in with Google</h3>
-              <p className="text-xs text-[#454A46]">Choose an account to continue to LifeBook</p>
+              <p className="text-xs text-[#454A46]">Demo mode — pick an account to continue to LifeBook</p>
             </div>
 
-            {/* List of Simulated Google Accounts */}
+            {/* Demo accounts — replace the earlier simulated contacts */}
             <div className="space-y-2.5">
               {[
-                { name: "Jane Smith", email: "jane.smith@gmail.com", avatar: "JS" },
-                { name: "John Doe", email: "john.doe@gmail.com", avatar: "JD" },
-                { name: "Sarah Connor", email: "sarah.connor@gmail.com", avatar: "SC" }
+                { name: "Ananya Sharma", email: "ananya.demo@lifebook.dev", avatar: "AS" },
+                { name: "Marcus Okafor", email: "marcus.demo@lifebook.dev", avatar: "MO" },
+                { name: "Guest Reader", email: "guest.reader@lifebook.dev", avatar: "GR" }
               ].map((acc, index) => (
                 <button
                   key={index}
                   type="button"
-                  onClick={() => handleGoogleLogin(acc.email, acc.name, `google_sim_${index}`)}
+                  onClick={() => handleGoogleLogin(acc.email, acc.name)}
                   className="w-full flex items-center gap-3 p-3 bg-[#F7F4ED] hover:bg-[#FCFBF7] border border-[#E5E5E1] hover:border-[#475569] text-left transition-all cursor-pointer"
                 >
                   <div className="w-8 h-8 rounded-full bg-[#315C4A]/20 text-[#315C4A] font-bold text-xs flex items-center justify-center border border-[#315C4A]/30">

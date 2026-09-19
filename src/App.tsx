@@ -361,11 +361,11 @@ export default function App() {
         {/* Navigation Sidebar */}
         <aside 
           id="app-sidebar" 
-          className={`w-64 border-r border-[#E5E5E1] bg-[#FCFBF7] p-4 space-y-6 flex-shrink-0 flex flex-col justify-between fixed lg:sticky top-20 bottom-0 z-30 transition-all duration-300 ${
+          className={`w-64 border-r border-[#E5E5E1] bg-[#FCFBF7] p-4 space-y-6 flex-shrink-0 flex flex-col justify-between fixed lg:sticky top-20 bottom-0 z-30 transition-all duration-300 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto ${
             mobileMenuOpen ? "left-0" : "-left-64 lg:left-0"
           }`}
         >
-          <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-160px)]">
+          <div className="space-y-4 overflow-y-auto lg:min-h-0">
             
             {/* Storage Meter Sidebar Widget */}
             <StorageUsageMeter 
