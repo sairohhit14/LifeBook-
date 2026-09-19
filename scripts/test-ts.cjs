@@ -9,8 +9,15 @@
  *   6. test/autobiography-check.ts — autobiography pipeline + route security
  *
  * Uses npx so no locally-installed binary paths are assumed.
+ * Runs with Supabase env vars cleared — see note above.
  */
 const { spawnSync } = require("child_process");
+
+// Isolate tests from the developer's real Supabase vault: children inherit these
+// (and dotenv won't override already-set vars), so writeDb()'s vault upload
+// becomes a no-op instead of pushing test data / spamming fetch-failed logs.
+process.env.SUPABASE_URL = "";
+process.env.SUPABASE_KEY = "";
 
 let failed = false;
 
