@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { 
-  Check, Sparkles, ShieldCheck, HardDrive, Users, Building2, 
-  Crown, ArrowRight, Zap, CreditCard, QrCode, Smartphone, X, Lock
+import {
+  Check, Sparkles, ShieldCheck, HardDrive,
+  Crown, ArrowRight, X, Lock
 } from "lucide-react";
 import { api } from "../api";
 import { User } from "../types";
@@ -11,71 +11,80 @@ interface SubscriptionPlansProps {
   onPlanSelected: () => void;
 }
 
-export default function SubscriptionPlans({ 
-  user, 
+// Razorpay Checkout is loaded lazily from their CDN on first use.
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if ((window as any).Razorpay) return resolve(true);
+    const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(true));
+      existing.addEventListener("error", () => resolve(false));
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+export default function SubscriptionPlans({
+  user,
   onPlanSelected
 }: SubscriptionPlansProps) {
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<any | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<string>("UPI");
-  const [upiId, setUpiId] = useState("user@okaxis");
-  const [cardNumber, setCardNumber] = useState("4111 2222 3333 4444");
   const [processing, setProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   const individualPlans = [
     {
-      id: "ind_monthly",
-      badge: "🥉 Individual Monthly",
-      name: "Individual Monthly",
-      priceDisplay: "₹15",
+      id: "ind_basic",
+      badge: "🥉 Basic Plan",
+      name: "Basic Plan",
+      priceDisplay: "₹49",
       period: "/ Month",
-      rawPrice: 15,
-      storage: "15 GB Extra Storage",
+      rawPrice: 49,
+      storage: "15 GB Extra Cloud Storage",
       popular: false,
-      buttonText: "Upgrade Now",
+      buttonText: "Choose Basic",
       features: [
-        "15 GB Extra Storage",
+        "15 GB Extra Cloud Storage",
         "Secure Cloud Backup",
-        "Multi-device Sync",
-        "Lifetime Access to AI Features",
-        "Secure Memory Storage"
+        "Multi-device Access"
       ]
     },
     {
-      id: "ind_6month",
-      badge: "🥈 Individual 6-Month",
-      name: "Individual 6-Month Plan",
-      priceDisplay: "₹80",
-      period: "/ 6 Months",
-      rawPrice: 80,
-      storage: "15 GB Extra Storage",
+      id: "ind_silver",
+      badge: "🥈 Silver Plan",
+      name: "Silver Plan",
+      priceDisplay: "₹129",
+      period: "/ Month",
+      rawPrice: 129,
+      storage: "50 GB Extra Cloud Storage",
       popular: false,
-      buttonText: "Choose Plan",
+      buttonText: "Choose Silver",
       features: [
-        "15 GB Extra Storage",
-        "Discounted Pricing (Save ~11%)",
-        "Secure Backup",
-        "Multi-device Sync",
-        "Lifetime Access to AI Features"
+        "50 GB Extra Cloud Storage",
+        "Cost Savings benefit",
+        "Secure Backup & Sync"
       ]
     },
     {
       id: "ind_yearly",
-      badge: "🥇 Individual Yearly Plan",
-      name: "Individual Yearly Plan",
-      priceDisplay: "₹500",
+      badge: "🥇 Yearly Plan",
+      name: "Yearly Plan",
+      priceDisplay: "₹499",
       period: "/ Year",
-      rawPrice: 500,
-      storage: "30 GB Extra Storage",
+      rawPrice: 499,
+      storage: "30 GB Extra Cloud",
       popular: true,
-      buttonText: "Most Popular",
+      buttonText: "Most Preferred",
       features: [
-        "30 GB Extra Storage",
-        "Best Value (Save Big)",
-        "Secure Cloud Storage",
-        "Fast Backup & Sync",
-        "Premium Badge Included",
-        "Lifetime Access to AI Features"
+        "30 GB Extra Cloud",
+        "Most Preferred",
+        "Fast Cloud Sync",
+        "Long-Term Safety"
       ]
     }
   ];
@@ -84,27 +93,61 @@ export default function SubscriptionPlans({
     setSelectedPlanForPayment(plan);
   };
 
+  // Real Razorpay flow: server creates the order → Razorpay Checkout collects
+  // the payment (UPI/cards/netbanking) → server verifies the HMAC signature
+  // before the upgrade is applied.
   const handleConfirmPayment = async () => {
-    if (!selectedPlanForPayment) return;
+    if (!selectedPlanForPayment || processing) return;
     setProcessing(true);
     try {
-      await api.upgradeSubscription(selectedPlanForPayment.name, paymentMethod);
-      setPaymentSuccess(true);
-      setTimeout(() => {
-        setProcessing(false);
-        setPaymentSuccess(false);
-        setSelectedPlanForPayment(null);
-        onPlanSelected();
-      }, 1500);
+      const ok = await loadRazorpayScript();
+      if (!ok) throw new Error("Could not load the payment gateway. Check your connection and retry.");
+
+      const order = await api.createSubscriptionOrder(selectedPlanForPayment.name);
+      const RazorpayCtor = (window as any).Razorpay;
+      const rzp = new RazorpayCtor({
+        key: order.keyId,
+        order_id: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
+        name: "LifeBook",
+        description: `${order.planName} — ${order.planPeriod}ly cloud storage`,
+        prefill: order.prefill || {},
+        theme: { color: "#315C4A" },
+        handler: async (response: any) => {
+          try {
+            await api.verifySubscriptionPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              planName: order.planName,
+            });
+            setPaymentSuccess(true);
+            setTimeout(() => {
+              setProcessing(false);
+              setPaymentSuccess(false);
+              setSelectedPlanForPayment(null);
+              onPlanSelected();
+            }, 1500);
+          } catch (err: any) {
+            alert(err.message || "Payment captured but verification failed. Contact support with your payment ID: " + response.razorpay_payment_id);
+            setProcessing(false);
+          }
+        },
+        modal: {
+          ondismiss: () => setProcessing(false),
+        },
+      });
+      rzp.open();
     } catch (err: any) {
-      alert(err.message || "We couldn't process that payment. Please check your details and try again.");
+      alert(err.message || "We couldn't start the checkout. Please try again.");
       setProcessing(false);
     }
   };
 
   return (
     <div id="subscription-plans-page" className="space-y-12 animate-fade-in pb-12">
-      
+
       {/* Header Banner */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#315C4A]/10 border border-[#315C4A]/30 text-[#315C4A] text-xs font-mono font-medium uppercase tracking-[0.15em]">
@@ -115,7 +158,7 @@ export default function SubscriptionPlans({
           Simple, Transparent Cloud Storage Plans
         </h1>
         <p className="text-sm md:text-base text-[#454A46] leading-relaxed">
-          AI-powered memory preservation is <strong className="text-[#315C4A]">100% FREE for everyone</strong>. Upgrade only when you require additional cloud storage for high-resolution photos, 4K video testimonies, and encrypted documents.
+          AI-powered memory preservation is <strong className="text-[#315C4A]">100% FREE for everyone</strong>, and every account starts with <strong className="text-[#315C4A]">1 GB</strong> of free cloud storage. Upgrade only when you require additional cloud storage for high-resolution photos, 4K video testimonies, and encrypted documents.
         </p>
       </div>
 
@@ -133,11 +176,11 @@ export default function SubscriptionPlans({
           {individualPlans.map((plan) => {
             const isCurrent = user.planTier === plan.name;
             return (
-              <div 
+              <div
                 key={plan.id}
                 className={`relative bg-[#F1EFEC] border p-6 flex flex-col justify-between transition-all duration-300 ${
-                  plan.popular 
-                    ? "border-[#315C4A] shadow-2xl shadow-[#315C4A]/10 ring-1 ring-[#315C4A]" 
+                  plan.popular
+                    ? "border-[#315C4A] shadow-2xl shadow-[#315C4A]/10 ring-1 ring-[#315C4A]"
                     : "border-[#E5E5E1] hover:border-[#475569]"
                 }`}
               >
@@ -195,8 +238,8 @@ export default function SubscriptionPlans({
       {selectedPlanForPayment && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] max-w-lg w-full p-6 text-[#1E2521] shadow-2xl relative space-y-6">
-            
-            <button 
+
+            <button
               onClick={() => setSelectedPlanForPayment(null)}
               className="absolute top-4 right-4 text-[#8A8F8B] hover:text-[#1E2521] transition-colors cursor-pointer"
             >
@@ -225,69 +268,12 @@ export default function SubscriptionPlans({
               </div>
             </div>
 
-            {/* Payment Method Selector */}
-            <div className="space-y-3">
-              <label className="text-xs font-mono text-[#454A46] uppercase font-medium">Select Payment Option:</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: "UPI", label: "UPI Instant", icon: <QrCode className="w-4 h-4 text-[#4E7A64]" /> },
-                  { id: "Credit Card", label: "Credit / Debit Card", icon: <CreditCard className="w-4 h-4 text-[#315C4A]" /> },
-                  { id: "Net Banking", label: "Net Banking / Wallet", icon: <Smartphone className="w-4 h-4 text-[#AAA0C9]" /> }
-                ].map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setPaymentMethod(m.id)}
-                    className={`p-3 text-xs font-semibold flex flex-col items-center gap-1 border transition-all cursor-pointer ${
-                      paymentMethod === m.id 
-                        ? "bg-[#315C4A]/10 border-[#315C4A] text-[#315C4A]" 
-                        : "bg-[#FCFBF7] border-[#E5E5E1] text-[#454A46] hover:text-[#1E2521]"
-                    }`}
-                  >
-                    {m.icon}
-                    <span>{m.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Method Inputs */}
-            {paymentMethod === "UPI" && (
-              <div className="space-y-2">
-                <label className="text-xs font-mono text-[#454A46]">Enter VPA / UPI ID</label>
-                <input 
-                  type="text" 
-                  value={upiId} 
-                  onChange={(e) => setUpiId(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#FCFBF7] border border-[#E5E5E1] text-xs text-[#1E2521] font-mono focus:border-[#315C4A] outline-none"
-                  placeholder="e.g. mobile@upi"
-                />
-              </div>
-            )}
-
-            {paymentMethod === "Credit Card" && (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-mono text-[#454A46]">Card Number</label>
-                  <input 
-                    type="text" 
-                    value={cardNumber} 
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#FCFBF7] border border-[#E5E5E1] text-xs text-[#1E2521] font-mono focus:border-[#315C4A] outline-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs font-mono text-[#454A46]">Expiry Date</label>
-                    <input type="text" defaultValue="12/28" className="w-full px-3 py-2 bg-[#FCFBF7] border border-[#E5E5E1] text-xs text-[#1E2521] font-mono outline-none" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-mono text-[#454A46]">CVV</label>
-                    <input type="password" defaultValue="888" className="w-full px-3 py-2 bg-[#FCFBF7] border border-[#E5E5E1] text-xs text-[#1E2521] font-mono outline-none" />
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* UPI, cards, netbanking and wallets are collected by Razorpay's
+                PCI-DSS-compliant checkout — card details never touch this app. */}
+            <p className="text-xs text-[#454A46] leading-relaxed flex items-start gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#4E7A64] flex-shrink-0 mt-0.5" />
+              <span>UPI, cards, net banking and wallets are handled securely by <strong>Razorpay Checkout</strong>. LifeBook never sees your payment details.</span>
+            </p>
 
             {/* Action Buttons */}
             <div className="pt-2">

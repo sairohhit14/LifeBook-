@@ -121,11 +121,6 @@ To empower individuals to curate and preserve their personal legacy through an i
   - Change password functionality
   - Security settings
 
-- **Email Configuration**
-  - Custom email server setup
-  - SMTP/Resend API integration
-  - Email template customization
-
 ## 3. User Stories
 
 ### 3.1 Registration & Onboarding
@@ -182,7 +177,7 @@ To empower individuals to curate and preserve their personal legacy through an i
 - **Database**: JSON file-based storage (db.json)
 - **File Storage**: Local file system (uploads directory)
 - **Email**: Nodemailer with SMTP/Resend API support
-- **AI Integration**: Google Gemini API
+- **AI Integration**: Google Gemini API (REST)
 
 ### 4.3 Deployment
 - **Frontend Hosting**: Firebase Hosting
@@ -365,7 +360,7 @@ To empower individuals to curate and preserve their personal legacy through an i
 ### 9.1 Technical Risks
 - **Data Loss**: Mitigated by regular backups and Firebase integration
 - **Security Breaches**: Addressed through Firebase Auth and encryption
-- **API Rate Limits**: Monitored and optimized for Gemini API usage
+- **API Rate Limits**: Monitored and optimized for Google Gemini API usage
 - **Scalability**: Planned migration to cloud infrastructure
 
 ### 9.2 Business Risks

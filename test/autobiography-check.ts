@@ -21,15 +21,23 @@ import os from "os";
 
 // Isolate db BEFORE importing server.ts
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "lifebook-auto-test-"));
+// chdir away from the repo so dotenv (override:true) can't load the developer's
+// real .env — inherited Firebase creds would register users in the live project
+// and re-runs would die with EMAIL_EXISTS (same isolation as supabase-sync-check).
+process.chdir(tmpDir);
 process.env.LIFEBOOK_DB_PATH = path.join(tmpDir, "db.json");
 process.env.LIFEBOOK_SKIP_AUTOSTART = "1";
 process.env.SESSION_SECRET = "test-secret-auto";
-// HARD RULE: tests must never call the real Gemini API (cost/quota abuse).
+// HARD RULE: tests must never call the real AI API (cost/quota abuse).
 // Pre-set an empty key so dotenv (which does not override existing vars)
 // cannot load the developer's real one; generation tests inject a fake client.
 process.env.GEMINI_API_KEY = "";
 
 const serverModule = await import("../server");
+// dotenv inside server.ts runs with override:true and re-loads the developer's
+// real .env over the empty key set above — re-clear AFTER import so tests
+// never reach the real AI API.
+process.env.GEMINI_API_KEY = "";
 const app: any = (serverModule as any).default;
 const resetAutoLimiter: () => void = (serverModule as any).resetAutoGenRateLimiterForTests;
 const resetAuthLimiter: () => void = (serverModule as any).resetAuthRateLimiterForTests;

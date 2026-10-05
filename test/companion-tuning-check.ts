@@ -14,9 +14,14 @@ import os from "os";
 
 // Isolate the db file BEFORE importing server.ts (it reads env at module load).
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "lifebook-tuning-test-"));
+// chdir away from the repo so dotenv (override:true) can't load the developer's
+// real .env — inherited Firebase creds would register users in the live project
+// and re-runs would die with EMAIL_EXISTS (same isolation as supabase-sync-check).
+process.chdir(tmpDir);
 process.env.LIFEBOOK_DB_PATH = path.join(tmpDir, "db.json");
 process.env.LIFEBOOK_SKIP_AUTOSTART = "1"; // don't start Vite/listener on import
 process.env.SESSION_SECRET = "test-secret-for-tuning-check";
+process.env.COMPANION_MONTHLY_LIMIT = "-1"; // unlimited: this suite chats more than the default cap
 
 const serverModule = await import("../server");
 const app: any = (serverModule as any).default;

@@ -1,9 +1,9 @@
 /**
  * Release switches.
  *
- * MONETIZATION_ENABLED=false ships LifeBook as fully free: paid-plan,
- * billing, and upgrade UI is hidden app-wide. Flip to true once real
- * payments (e.g. Stripe) are wired up — until then "upgrades" would
- * only flip a field in the database.
+ * MONETIZATION_ENABLED=true shows the Storage Plans page, sidebar entry,
+ * and upgrade buttons. ponytail: selecting a plan only updates the
+ * subscription tier in the database — no real payment is collected until
+ * a provider (e.g. Stripe/Razorpay) is wired into the upgrade endpoint.
  */
-export const MONETIZATION_ENABLED = false;
+export const MONETIZATION_ENABLED = true;

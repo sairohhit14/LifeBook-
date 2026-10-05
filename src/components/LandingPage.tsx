@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { api } from "../api";
 import { User } from "../types";
+import { staggerChildren } from "../lib/motion";
 import { BookOpen, Shield, Heart, Lock, User as UserIcon, Mail, Phone, Calendar, ArrowRight, Loader, X } from "lucide-react";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../firebase";
@@ -16,6 +17,13 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({ onLoginSuccess, onEnterGuestMode }: LandingPageProps) {
+  const introFeaturesRef = useRef<HTMLDivElement>(null);
+  const authCardRef = useRef<HTMLDivElement>(null);
+  // Orchestrated entrance: feature cards cascade in, auth card follows
+  useEffect(() => {
+    staggerChildren(introFeaturesRef.current, 90);
+    staggerChildren(authCardRef.current, 80);
+  }, []);
   const [isLogin, setIsLogin] = useState(true);
   const [isFamilyMode, setIsFamilyMode] = useState(false);
   const [error, setError] = useState("");
@@ -187,8 +195,8 @@ export default function LandingPage({ onLoginSuccess, onEnterGuestMode }: Landin
   return (
     <div id="landing-container" className="min-h-screen bg-[#F7F4ED] text-[#1E2521] flex flex-col md:flex-row font-sans">
       {/* Visual / Introduction Side */}
-      <div id="landing-intro" className="flex-1 p-8 md:p-16 flex flex-col justify-between bg-[#FCFBF7] border-r border-[#E5E5E1]">
-        <div id="landing-brand-logo" className="flex items-center gap-3">
+      <div id="landing-intro" className="flex-1 min-w-0 p-8 md:p-16 flex flex-col justify-between bg-[#FCFBF7] border-r border-[#E5E5E1]">
+        <div id="landing-brand-logo" className="flex items-center gap-3 animate-fade-in">
           <div className="w-12 h-12 rounded-full overflow-hidden border border-[#315C4A]/50 bg-white flex items-center justify-center flex-shrink-0 shadow-lg">
             <img src="/logo.png" alt="LifeBook Logo" className="w-full h-full object-cover" />
           </div>
@@ -209,7 +217,7 @@ export default function LandingPage({ onLoginSuccess, onEnterGuestMode }: Landin
             LifeBook keeps your memories, milestones, letters, and important documents in one calm, private place — so the people you love can hear your story in your own words, long after today.
           </p>
 
-          <div id="intro-features" className="space-y-4">
+          <div id="intro-features" ref={introFeaturesRef} className="space-y-4">
             <div className="flex items-start gap-4 p-4 bg-[#FCFBF7] border border-[#E5E5E1] rounded-[16px] transition-all hover:border-[#B8C9BD] hover:shadow-sm">
               <div className="p-2 bg-[#E2EBE4] text-[#315C4A] rounded-[10px] flex-shrink-0">
                 <Heart className="w-4 h-4" />
@@ -245,8 +253,8 @@ export default function LandingPage({ onLoginSuccess, onEnterGuestMode }: Landin
         </div>
       </div>
 
-      {/* Auth Form Side */}        <div id="landing-auth" className="flex-1 p-8 md:p-16 flex flex-col justify-center bg-[#F1EFEC]/60">
-        <div className="max-w-md w-full mx-auto space-y-8 bg-[#FCFBF7] p-8 md:p-10 rounded-[24px] border border-[#E5E5E1] shadow-sm">
+      {/* Auth Form Side */}        <div id="landing-auth" className="flex-1 min-w-0 p-8 md:p-16 flex flex-col justify-center bg-[#F1EFEC]/60">
+        <div ref={authCardRef} className="max-w-md w-full mx-auto space-y-8 bg-[#FCFBF7] p-8 md:p-10 rounded-[24px] border border-[#E5E5E1] shadow-sm">
           <div id="auth-header" className="text-center md:text-left pb-4 border-b border-[#E5E5E1]">
             <h2 className="text-3xl font-serif italic text-[#1E2521] tracking-tight">
               {isFamilyMode 

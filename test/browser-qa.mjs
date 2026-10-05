@@ -232,9 +232,30 @@ async function main() {
 
     const TABS = [
       ["Timeline", "timeline"], ["Memories", "memories"], ["Family", "family"],
-      ["Vault", "vault"], ["Messages", "messages"], ["Stories", "stories"],
-      ["AI Companion", "companion"], ["Legacy Film", "video"], ["Autobiography", "autobiography"], ["Settings", "settings"],
+      ["Vault", "vault"], ["Messages", "messages"],
+      ["AI Companion", "companion"], ["Legacy Film", "video"], ["MyBiography", "autobiography"], ["Settings", "settings"],
     ];
+
+    // Per-tab content checks for the recent feature changes (evaluated after
+    // the tab renders; null = no assertion for that tab).
+    const TAB_ASSERTS = {
+      // Stories removed, Autobiography renamed MyBiography, book cover renders
+      autobiography: `(() => {
+        const sidebar = [...document.querySelectorAll('#app-sidebar button')].map(b => b.textContent.trim());
+        return sidebar.includes("MyBiography") && !sidebar.includes("Stories") && !!document.getElementById("auto-cover");
+      })()`,
+      // Voice assistant: language picker + dictation mic button
+      companion: `(() => {
+        const sel = document.querySelector('select[aria-label="Conversation language"]');
+        const mic = document.querySelector('button[aria-label="Speak your memory"]');
+        return !!sel && sel.options.length >= 12 && !!mic;
+      })()`,
+      // Legacy Messages: heading intact, the old unconfigured-sender notice gone
+      messages: `(() => {
+        const text = document.body.innerText;
+        return text.includes("Legacy Messages Capsule") && !text.includes("Real Gmail delivery needs a sender");
+      })()`,
+    };
 
     // Viewport matrix: desktop (≥1024, sidebar pinned), mobile (<768, bottom nav),
     // tablet (768–1023, md: boundary — no bottom nav, drawer via hamburger).
@@ -310,7 +331,7 @@ async function main() {
 
       // Navigate tabs
       if (mode === "desktop") {
-        for (const [label] of TABS) {
+        for (const [label, id] of TABS) {
           const ok = await evalJs(p, `(() => {
             const btn = [...document.querySelectorAll('#app-sidebar button')].find(b => b.textContent.trim() === ${JSON.stringify(label)});
             if (!btn) return false; btn.click(); return true;
@@ -322,6 +343,12 @@ async function main() {
           if (!rendered) critical(`app/${mode}: tab "${label}"`, "main canvas empty after click");
           if (p.pageErrors.length + p.consoleErrors.length > errsBefore)
             critical(`app/${mode}: tab "${label}"`, [...p.pageErrors, ...p.consoleErrors].slice(-2));
+          const expect = TAB_ASSERTS[id];
+          if (expect) {
+            let pass = await evalJs(p, expect);
+            if (!pass) { await sleep(1000); pass = await evalJs(p, expect); } // lazy chunks may still be compiling
+            if (!pass) critical(`app/${mode}: tab "${label}"`, "content check failed (rename/voice UI/notice removal)");
+          }
         }
         await shot(p, `tab-settings-${tag}`);
         await probeMemoryModal(p, `app/${tag}`);

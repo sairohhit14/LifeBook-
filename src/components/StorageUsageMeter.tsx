@@ -143,7 +143,7 @@ export function StorageUsageMeter({
         <div className="p-3 bg-[#B4543E]/10 border border-[#B4543E]/40 flex items-center justify-between text-xs text-[#F87171]">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-[#B4543E]" />
-            <span>Storage is completely full! Upgrade now to continue saving photos, voice notes, and videos.</span>
+            <span>You've used your free 1 GB — choose a plan below to keep saving photos, voice notes, and videos.</span>
           </div>
           <button 
             onClick={() => setShowFullModal(true)}
@@ -204,7 +204,7 @@ export function StorageFullModal({
           <ul className="list-disc list-inside space-y-1 text-[11px]">
             <li>Existing memories &amp; documents remain 100% secure and accessible.</li>
             <li>New high-resolution photo/video uploads are temporarily paused until storage is expanded.</li>
-            <li>AI features stay 100% free and uninterrupted.</li>
+            <li>Every account starts with 1 GB of free cloud storage — that's enough for a handful of memories, voice notes, and small documents. When 1 GB isn't enough, choose a plan to keep saving without pause.</li>
           </ul>
         </div>
 

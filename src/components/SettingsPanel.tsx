@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { User } from "../types";
 import { api } from "../api";
 import { 
   Settings, User as UserIcon, Mail, Phone, Calendar, Lock, ShieldAlert, 
-  Trash2, Loader, AlertCircle, CheckCircle, Upload, Server, Key, LogOut
+  Trash2, Loader, AlertCircle, CheckCircle, Upload, Key, LogOut
 } from "lucide-react";
 
 interface SettingsPanelProps {
@@ -35,83 +35,6 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
-
-  // Email delivery config
-  const [protocol, setProtocol] = useState<"SMTP" | "Resend">("SMTP");
-  const [smtpHost, setSmtpHost] = useState("smtp.gmail.com");
-  const [smtpPort, setSmtpPort] = useState("587");
-  const [smtpUser, setSmtpUser] = useState("");
-  const [smtpPass, setSmtpPass] = useState("");
-  const [smtpFrom, setSmtpFrom] = useState("");
-  const [resendApiKey, setResendApiKey] = useState("");
-  const [resendFrom, setResendFrom] = useState("");
-  const [testTo, setTestTo] = useState("");
-  const [testSending, setTestSending] = useState(false);
-
-  useEffect(() => {
-    fetchEmailConfig();
-  }, []);
-
-  const fetchEmailConfig = async () => {
-    try {
-      const config = await api.getEmailConfig();
-      if (config) {
-        setProtocol(config.protocol || "SMTP");
-        setSmtpHost(config.smtpHost || "smtp.gmail.com");
-        setSmtpPort(config.smtpPort || "587");
-        setSmtpUser(config.smtpUser || "");
-        setSmtpPass(config.smtpPass || "");
-        setSmtpFrom(config.smtpFrom || "");
-        setResendApiKey(config.resendApiKey || "");
-        setResendFrom(config.resendFrom || "");
-      }
-    } catch (err: any) {
-      console.error("Failed to load email config:", err);
-    }
-  };
-
-  const handleUpdateEmailConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    try {
-      await api.updateEmailConfig({
-        protocol,
-        smtpHost,
-        smtpPort,
-        smtpUser,
-        smtpPass,
-        smtpFrom,
-        resendApiKey,
-        resendFrom
-      });
-      setSuccess("Email delivery service credentials updated and secured!");
-    } catch (err: any) {
-      setError(err.message || "We couldn't save your email settings. Please check the details and try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSendTestEmail = async () => {
-    setError("");
-    setSuccess("");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testTo.trim())) {
-      setError("Enter a valid Gmail address to send the test email to.");
-      return;
-    }
-    setTestSending(true);
-    try {
-      await api.sendTestEmail(testTo.trim());
-      setSuccess(`Test email sent to ${testTo.trim()} — check that Gmail inbox (and spam folder).`);
-    } catch (err: any) {
-      setError(err.message || "Test email failed to send.");
-    } finally {
-      setTestSending(false);
-    }
-  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -430,151 +353,7 @@ export default function SettingsPanel({ user, onProfileUpdated, onLogout }: Sett
           
           {!isGuest && (
             <>
-              {/* Email Delivery Configuration form */}
-              <div className="p-6 bg-white border border-[#E5E5E1] rounded-[16px] space-y-6 shadow-sm">
-                <h3 className="font-serif italic text-lg text-[#1A1A1A] flex items-center gap-1.5">
-                  <Server className="w-5 h-5 text-[#1A1A1A]" />
-                  <span>Email Delivery Configuration</span>
-                </h3>
-            <p className="text-xs text-[#454A46] leading-relaxed">
-              Configure your personal SMTP server (Nodemailer) or Resend API credentials to automate legacy message delivery. If unconfigured, the system will fall back to server environment variables.
-            </p>
-
-            <form onSubmit={handleUpdateEmailConfig} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Delivery Protocol</label>
-                <select
-                  value={protocol}
-                  onChange={(e) => setProtocol(e.target.value as any)}
-                  className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A] cursor-pointer font-medium uppercase tracking-[0.12em] text-[10px]"
-                >
-                  <option value="SMTP">SMTP (Nodemailer)</option>
-                  <option value="Resend">Resend API</option>
-                </select>
-              </div>
-
-              {protocol === "SMTP" ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="col-span-2 space-y-1">
-                      <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">SMTP Host</label>
-                      <input
-                        type="text"
-                        placeholder="smtp.gmail.com"
-                        value={smtpHost}
-                        onChange={(e) => setSmtpHost(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Port</label>
-                      <input
-                        type="text"
-                        placeholder="587"
-                        value={smtpPort}
-                        onChange={(e) => setSmtpPort(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">SMTP Username</label>
-                    <input
-                      type="text"
-                      placeholder="your-email@gmail.com"
-                      value={smtpUser}
-                      onChange={(e) => setSmtpUser(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">SMTP Password / App Password</label>
-                    <input
-                      type="password"
-                      placeholder="Gmail App Password (16 letters, no spaces)"
-                      value={smtpPass}
-                      onChange={(e) => setSmtpPass(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
-                    />
-                    <p className="text-[10px] text-[#8A8F8B] leading-relaxed">Gmail needs an App Password, not your login password: Google Account → Security → 2-Step Verification → App passwords.</p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Sender "From" Email</label>
-                    <input
-                      type="text"
-                      placeholder='"LifeBook Legacy" <no-reply@lifebook.com>'
-                      value={smtpFrom}
-                      onChange={(e) => setSmtpFrom(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Resend API Key</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8A8F8B]">
-                        <Key className="w-4 h-4" />
-                      </span>
-                      <input
-                        type="password"
-                        placeholder="re_xxxxxxxxxxxxxx"
-                        value={resendApiKey}
-                        onChange={(e) => setResendApiKey(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Resend Sender Email (Verified Domain)</label>
-                    <input
-                      type="text"
-                      placeholder="onboarding@resend.dev"
-                      value={resendFrom}
-                      onChange={(e) => setResendFrom(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 mt-2 bg-[#315C4A] hover:bg-[#27493A] text-white rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] cursor-pointer transition-all flex items-center justify-center gap-1"
-              >
-                {loading ? <Loader className="w-4 h-4 animate-spin" /> : <span>Save Email Credentials</span>}
-              </button>
-
-              <div className="pt-2 border-t border-[#E5E5E1] space-y-2">
-                <label className="text-[10px] font-semibold text-[#1E2521]/70 uppercase tracking-wider">Verify real Gmail delivery</label>
-                <div className="flex gap-2">
-                  <input
-                    type="email"
-                    placeholder="you@gmail.com"
-                    value={testTo}
-                    onChange={(e) => setTestTo(e.target.value)}
-                    className="flex-1 px-4 py-2.5 bg-white border border-[#E5E5E1] rounded-[16px] text-[#1A1A1A] text-xs focus:outline-none focus:border-[#315C4A]"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSendTestEmail}
-                    disabled={testSending}
-                    className="px-4 py-2.5 border border-[#315C4A] text-[#315C4A] hover:bg-[#315C4A] hover:text-white rounded-[16px] text-[10px] font-medium uppercase tracking-[0.12em] cursor-pointer transition-all flex items-center gap-1 whitespace-nowrap"
-                  >
-                    {testSending ? <Loader className="w-4 h-4 animate-spin" /> : <span>Send test email</span>}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-
-          {/* Password form */}
+              {/* Password form */}
           <div className="p-6 bg-white border border-[#E5E5E1] rounded-[16px] space-y-6 shadow-sm">
             <h3 className="font-serif italic text-lg text-[#1A1A1A]">Security Credentials</h3>
 

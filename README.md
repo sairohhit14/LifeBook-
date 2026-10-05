@@ -13,7 +13,7 @@ Feature highlight — **Autobiography** (`src/components/Autobiography.tsx`,
 `server/autobiography-pipeline.ts`, `/api/autobiography*`): turns the user's real
 memories and milestones into a source-grounded, first-person life story. The
 pipeline clusters memories into chapters, detects conflicting dates/places, and
-constrains Gemini to a strict biographer role (no invented people, dates, or
+ constrains the AI (Gemini) to a strict biographer role (no invented people, dates, or
 events; untrusted memory text is fenced against prompt injection; AI output is
 validated against the chapter plan and rejected if it cites memories it wasn't
 given). Generation is per-chapter with persisted progress and per-chapter retry,
@@ -32,9 +32,9 @@ Express API (server.ts, served by api/index.ts on Vercel)
         │   · Google Sign-In (Firebase Auth popup → local session)
         │   · guest "Family View-Only" sessions via Legacy Key (GET-only)
         ├─ Firebase Admin (optional): mirrors identities into Firebase Auth
-        ├─ Gemini (@google/genai): biography, companion chat, image
-        │   description, video storyboard — each with graceful fallbacks
-        ├─ Email: SMTP (nodemailer) or Resend API; per-user config supported;
+        ├─ Google Gemini (REST adapter): biography, companion chat,
+        │   image description, video storyboard — each with graceful fallbacks
+        ├─ Email: SMTP (nodemailer) or Resend API, configured in server env;
         │   Ethereal test-account fallback when unconfigured
         └─ Scheduled legacy-message delivery (in-process, every 10s)
               │
@@ -55,7 +55,7 @@ Firebase Hosting/Functions deployment config, duplicate frontend entry files.
 | Sessions | HMAC token `payload.timestamp.signature` (`SESSION_SECRET`) |
 | Data | Supabase `vault_data` table (primary), `db.json` (local fallback/cache) |
 | Files | Supabase `uploads` bucket → Firebase Storage → local `./uploads` |
-| Email | SMTP or Resend (env or per-user Settings config) |
+| Email | SMTP or Resend (server `.env` only) |
 
 ### Security model
 - **Authentication:** custom bearer token signed with `SESSION_SECRET`; without it a
@@ -107,7 +107,7 @@ npm run dev:frontend  # Vite only, proxies /api + /uploads to :3000
 ```
 
 Configure via `.env.local` (git-ignored) — see `.env.example` for every variable
-including `SESSION_SECRET`, Supabase, Firebase, Gemini, and email settings.
+ including `SESSION_SECRET`, Supabase, Firebase, Google Gemini, and email settings.
 
 ## Testing & CI
 

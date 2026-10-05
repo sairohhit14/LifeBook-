@@ -13,12 +13,15 @@
     "test": "node scripts/test-ts.cjs",
     "test:browser": "node test/browser-qa.mjs",
     "seed:demo": "node scripts/seed-demo-data.cjs",
-    "audit:secrets": "node scripts/scan-secrets.cjs"
+    "audit:secrets": "node scripts/scan-secrets.cjs",
+    "backup:restore": "tsx server/db-backup.ts",
+    "backup:verify": "tsx scripts/verify-backup.ts"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
+    "@google/genai": "^2.27.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
+    "animejs": "^4.5.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
@@ -44,7 +47,6 @@
   },
   "allowScripts": {
     "@firebase/util@1.15.1": true,
-    "@google/genai@2.10.0": true,
     "protobufjs@7.6.5": true,
     "esbuild@0.25.12": true,
     "esbuild@0.28.1": true

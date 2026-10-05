@@ -13,8 +13,8 @@ export default function StorageBanner({
   onLearnMore, 
   onUpgradeStorage, 
   planTier = "Free",
-  storageUsedGB = 1.2,
-  storageLimitGB = 15
+  storageUsedGB = 0,
+  storageLimitGB = 1
 }: StorageBannerProps) {
   const percentage = Math.min(100, Math.round((storageUsedGB / storageLimitGB) * 100));
 

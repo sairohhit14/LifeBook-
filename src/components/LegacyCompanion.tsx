@@ -33,12 +33,12 @@ interface LegacyCompanionProps {
 }
 
 const CONVERSATION_STARTERS = [
-  "Tell me about your first school day",
-  "What is your proudest career victory?",
-  "How did you meet your partner?",
-  "What are three values you want your family to keep?",
-  "Tell me about a childhood vacation",
-  "What is the biggest lesson life taught you?"
+  "Let's talk about my first day at school",
+  "Ask me how I met my partner",
+  "I want to relive my favorite trip",
+  "Remind me of a moment I'm proud of",
+  "Let's remember a childhood vacation",
+  "What's the biggest lesson life taught me?"
 ];
 
 export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyCompanionProps) {
@@ -49,6 +49,8 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
   const [error, setError] = useState("");
   const [savingAsMemory, setSavingAsMemory] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  // Monthly per-user companion cap (server-enforced; UI mirrors it).
+  const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number | null; month: string } | null>(null);
 
   // ---- language + voice assistant (speak & understand Indian languages)
   const [langCode, setLangCode] = useState<string>(() => localStorage.getItem("lifebook_companion_lang") || "");
@@ -127,8 +129,23 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
     }
   };
 
+  const fetchUsage = async () => {
+    try {
+      const prefs = await api.getChatPreferences();
+      setUsage(prefs.usage ?? null);
+    } catch { /* usage badge is cosmetic — never block the page on it */ }
+  };
+
+  useEffect(() => {
+    if (!guestMode) fetchUsage();
+  }, [guestMode]);
+
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || sending) return;
+    if (usage && usage.limit >= 0 && usage.remaining === 0) {
+      setError("You've used all your AI Companion messages for this month. They reset next month.");
+      return;
+    }
     
     setError("");
     const userMsg: ChatMessage = {
@@ -143,12 +160,21 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
     setSending(true);
 
     try {
-      // Server instructs Gemini to answer in the selected language.
+      // Server instructs the AI (Gemini) to answer in the selected language.
       const companionMsg = await api.sendMessage(textToSend, langCode || undefined);
       setMessages(prev => [...prev, companionMsg]);
+      fetchUsage(); // refresh the remaining-messages badge
+      if ((companionMsg as any).degraded) {
+        setError("The AI engine is offline (missing or invalid GEMINI_API_KEY) — replies are limited to your saved vault notes. Add a key in .env to restore full conversations.");
+      }
       if (langCode) speak(companionMsg); // voice assistant: read the reply aloud
     } catch (err: any) {
-      setError(err.message || "We couldn't send that message. Please try again.");
+      if (err.code === "COMPANION_LIMIT_REACHED") {
+        setUsage(err.usage ?? null);
+        setError("You've used all your AI Companion messages for this month. They reset next month.");
+      } else {
+        setError(err.message || "We couldn't send that message. Please try again.");
+      }
     } finally {
       setSending(false);
     }
@@ -199,11 +225,11 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-[#1A1A1A]">
             <Sparkles className="w-5 h-5 text-[#1A1A1A] animate-pulse" />
-            <h3 className="font-serif italic text-lg text-[#1A1A1A]">Life Companion Coach</h3>
+            <h3 className="font-serif italic text-lg text-[#1A1A1A]">Chat With a Friend</h3>
           </div>
 
           <p className="text-xs text-[#454A46] leading-relaxed">
-            Struggling to remember what stories to write? Tap any starter question below. Your companion will guide you through capturing rich details.
+            Not sure where to start? Tap any starter below — your friend knows your stories and loves hearing them.
           </p>
 
           <div className="space-y-2.5">
@@ -252,10 +278,10 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
           <div className="flex items-center gap-2.5">
             <div className="w-2.5 h-2.5 rounded-full animate-breathe" style={{ background: "radial-gradient(circle at 30% 30%, var(--color-brand-sage), var(--color-brand-primary))", boxShadow: "0 0 10px rgba(126,155,137,0.55)" }} aria-hidden="true"></div>
             <div>
-              <h4 className="font-serif italic text-sm text-[#1A1A1A]">Empathetic Legacy Assistant</h4>
+              <h4 className="font-serif italic text-sm text-[#1A1A1A]">Your Friend &amp; Legacy Companion</h4>
               <p className="text-[10px] text-[#454A46] font-mono uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#315C4A] inline-block"></span>
-                Gemini 3.6 Flash Active • Memory Vault Connected
+                Gemini 3.5 Flash Active • Memory Vault Connected
               </p>
             </div>
           </div>
@@ -283,8 +309,26 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
             className="p-1.5 hover:bg-[#F9EFEB] border border-transparent hover:border-[#E8CDC4] rounded-[16px] text-[#8A8F8B] hover:text-[#B4543E] transition-all cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+          </button>          </div>
+
+        {/* Monthly usage banner: always visible, directly under the header */}
+        {usage && usage.limit >= 0 && (
+          <div
+            role="status"
+            className={`px-4 py-2 text-[10px] font-mono uppercase tracking-wider border-b flex items-center gap-1.5 flex-shrink-0 ${
+              usage.remaining === 0
+                ? "bg-[#F9EFEB] border-[#E8CDC4] text-[#B4543E]"
+                : "bg-[#F1EFEC] border-[#E5E5E1] text-[#454A46]"
+            }`}
+          >
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>
+              {usage.remaining === 0
+                ? "You've used all your AI Companion chats for this month — they reset next month."
+                : `Only ${usage.remaining} of ${usage.limit} AI Companion chats left this month.`}
+            </span>
+          </div>
+        )}
 
         {/* Messages Ledger Display Area */}
         <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#F9F7F2]/30">
@@ -305,9 +349,9 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
               <div className="mx-auto w-12 h-12 bg-[#F1EFEC] border border-[#E5E5E1] rounded-[16px] flex items-center justify-center text-[#454A46]">
                 <MessageSquare className="w-6 h-6" />
               </div>
-              <h4 className="font-serif italic text-lg text-[#1A1A1A]">Start your dialogue</h4>
+              <h4 className="font-serif italic text-lg text-[#1A1A1A]">Start chatting</h4>
               <p className="text-[#454A46] text-xs max-w-sm mx-auto leading-relaxed font-sans">
-                Send a question or simple greeting to your AI life coach to trigger conversation and reflections.
+                Say hi to your AI friend — it remembers your stories, reminisces with you, and loves hearing new ones.
               </p>
             </div>
           ) : (
@@ -316,7 +360,7 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
               return (
                 <div 
                   key={msg.id} 
-                  className={`flex gap-3 max-w-xl ${isUser ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                  className={`msg-pop flex gap-3 max-w-xl ${isUser ? "ml-auto flex-row-reverse" : "mr-auto"}`}
                 >
                   {/* Avatar Icon */}
                   <div className={`w-8 h-8 rounded-[16px] flex items-center justify-center text-[10px] font-bold font-mono uppercase flex-shrink-0 ${
@@ -348,13 +392,13 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
           )}
 
           {sending && (
-            <div className="flex gap-3 max-w-xl mr-auto">
+            <div className="animate-fade-in flex gap-3 max-w-xl mr-auto">
               <div className="w-8 h-8 rounded-[16px] bg-white text-[#1A1A1A] border border-[#E5E5E1] flex items-center justify-center text-[10px] font-bold font-mono">
                 AI
               </div>
               <div className="p-4 rounded-[16px] bg-[#F1EFEC] border border-[#E5E5E1] flex items-center gap-2">
                 <Loader className="w-4 h-4 animate-spin text-[#1A1A1A]" />
-                <span className="text-xs text-[#454A46] font-mono uppercase tracking-wider">Formulating reflecting queries...</span>
+                <span className="text-xs text-[#454A46] font-mono uppercase tracking-wider">Thinking...</span>
               </div>
             </div>
           )}
@@ -370,15 +414,17 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
           >
             <input
               type="text"
-              disabled={sending || guestMode}
+              disabled={sending || guestMode || (usage?.limit >= 0 && usage?.remaining === 0)}
               placeholder={
                 listening
                   ? "Listening..."
                   : guestMode
                     ? "Chat inputs disabled in Family Guest mode"
-                    : activeLang && langCode
-                      ? `Tell your coach in ${activeLang.native}...`
-                      : "Tell your coach about a defining childhood memory..."
+                    : usage?.limit >= 0 && usage?.remaining === 0
+                      ? "Monthly companion limit reached — resets next month"
+                      : activeLang && langCode
+                      ? `Tell your friend in ${activeLang.native}...`
+                      : "Tell your friend about a defining childhood memory..."
               }
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -402,7 +448,7 @@ export default function LegacyCompanion({ onMemoryAdded, guestMode }: LegacyComp
             )}
             <button
               type="submit"
-              disabled={sending || !inputText.trim() || guestMode}
+              disabled={sending || !inputText.trim() || guestMode || (usage?.limit >= 0 && usage?.remaining === 0)}
               className="p-3 bg-[#315C4A] hover:bg-[#27493A] text-white rounded-[16px] transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center"
             >
               <Send className="w-4 h-4" />

@@ -5,8 +5,6 @@
  * - Invalid recipient emails are rejected on message create/update (400)
  * - Instant delivery without a real SMTP/Resend transport fails honestly
  *   (500, status "failed") instead of fake-marking "delivered" via Ethereal
- * - The email-config test endpoint validates its `to` address and refuses
- *   to run without a real transport
  * - Memory media captions (per-photo text) survive a create → read round-trip
  */
 import assert from "assert";
@@ -16,6 +14,10 @@ import os from "os";
 
 // Isolate the db file BEFORE importing server.ts (it reads env at module load).
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "lifebook-capsule-test-"));
+// chdir away from the repo so dotenv (override:true) can't load the developer's
+// real .env — inherited Firebase creds would register users in the live project
+// and re-runs would die with EMAIL_EXISTS (same isolation as supabase-sync-check).
+process.chdir(tmpDir);
 process.env.LIFEBOOK_DB_PATH = path.join(tmpDir, "db.json");
 process.env.LIFEBOOK_SKIP_AUTOSTART = "1"; // don't start Vite/listener on import
 process.env.SESSION_SECRET = "test-secret-for-capsule-check";
@@ -110,17 +112,6 @@ await check("instant delivery fails honestly without a real transport", async ()
   assert.ok(msg, "message should still exist");
   assert.strictEqual(msg.status, "failed", `expected status failed, got ${msg.status}`);
   assert.ok(msg.status !== "delivered", "must NOT be fake-marked delivered");
-});
-
-await check("test-email endpoint rejects invalid `to` address", async () => {
-  const res = await call("POST", "/api/settings/email-config/test", { to: "nope" }, token);
-  assert.strictEqual(res.status, 400, `expected 400, got ${res.status}: ${JSON.stringify(res.body)}`);
-});
-
-await check("test-email endpoint refuses without a real transport", async () => {
-  const res = await call("POST", "/api/settings/email-config/test", { to: "me@gmail.com" }, token);
-  assert.strictEqual(res.status, 400, `expected 400, got ${res.status}: ${JSON.stringify(res.body)}`);
-  assert.match(String(res.body.error || ""), /not configured/i);
 });
 
 await check("memory photo captions survive create → read", async () => {

@@ -10,7 +10,6 @@ import LifeTimeline from "./components/LifeTimeline";
 import LegacyMessages from "./components/LegacyMessages";
 import FamilyCircle from "./components/FamilyCircle";
 import SecureVault from "./components/SecureVault";
-import BiographyBooks from "./components/BiographyBooks";
 import Autobiography from "./components/Autobiography";
 import LegacyCompanion from "./components/LegacyCompanion";
 import GlobalSearch from "./components/GlobalSearch";
@@ -537,9 +536,10 @@ export default function App() {
           )}
 
           {activeTab === "stories" && (
-            <BiographyBooks 
-              onStoryGenerated={refreshStatsAndNotifications} 
+            <Autobiography
+              user={user}
               guestMode={guestMode}
+              onNavigate={(tab) => setActiveTab(tab)}
             />
           )}
 

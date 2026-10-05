@@ -119,7 +119,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
 
         setMediaFiles(prev => [...prev, newMedia]);
 
-        // Auto-generate description for uploaded image using Gemini API on backend
+        // Auto-generate description for uploaded image using Gemini on backend
         if (mediaType === "image") {
           setAiDescribing(true);
           try {
@@ -186,6 +186,22 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
     } catch (err: any) {
       setError(err.message || "We couldn't save that memory. Please try again.");
     }
+  };
+
+  // Warn before discarding a form that already holds uploaded photos — uploads
+  // are persisted to storage immediately, so closing without saving orphans the
+  // file (invisible in the app, still billed in storage). ponytail: compare via
+  // ref outside React state rather than wiring every close path; a real
+  // draft-recovery flow is the upgrade path if users hit this often.
+  const closeFormGuard = () => {
+    if (mediaFiles.length > 0) {
+      const discard = window.confirm(
+        "You have " + mediaFiles.length + " uploaded file(s) not saved to a memory yet.\n\n" +
+        "Click Cancel to go back and press Save Entry to keep them, or OK to discard this entry."
+      );
+      if (!discard) return;
+    }
+    setIsFormOpen(false);
   };
 
   const handleDeleteMemory = async (id: string) => {
@@ -486,7 +502,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
                         <Calendar className="w-2.5 h-2.5 text-[#C9A66B]" />
                         {new Date(memory.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short' })}
                       </span>
-                      <h4 className="font-serif italic text-sm text-white line-clamp-2 leading-tight">{memory.title}</h4>
+                      <h4 className="font-serif italic text-sm text-[#1E2521] line-clamp-2 leading-tight">{memory.title}</h4>
                       <p className="text-[10px] text-[#8A8F8B] line-clamp-3 leading-relaxed font-sans">{memory.description}</p>
                     </div>
 
@@ -510,7 +526,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
               <h3 className="font-serif italic text-xl text-[#1E2521]">
                 {editingMemory ? "Edit Memory Entry" : "Record New Life Memory"}
               </h3>
-              <button onClick={() => setIsFormOpen(false)} className="p-1 text-[#8A8F8B] hover:text-[#1E2521] cursor-pointer transition-colors">
+              <button onClick={closeFormGuard} className="p-1 text-[#8A8F8B] hover:text-[#1E2521] cursor-pointer transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -695,7 +711,7 @@ export default function MemoryVault({ onMemoryChanged, guestMode }: MemoryVaultP
               <div className="pt-4 border-t border-[#E5E5E1] flex justify-end gap-3 bg-[#F1EFEC] -mx-6 -mb-6 p-6 rounded-b-xl">
                 <button
                   type="button"
-                  onClick={() => setIsFormOpen(false)}
+                  onClick={closeFormGuard}
                   className="px-4 py-2 border border-[#E5E5E1] bg-[#FCFBF7] hover:bg-[#EFE9DD] text-[#454A46] hover:text-[#1E2521] rounded-[24px] text-xs font-medium uppercase tracking-[0.12em] cursor-pointer transition-colors"
                 >
                   Cancel

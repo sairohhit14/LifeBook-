@@ -131,8 +131,8 @@ function seedAnanya(db) {
   });
 
   db.subscriptions.push({
-    id: "sub_ana_1", userId: uid, planTier: "Legacy Plus", billingCycle: "yearly",
-    amount: 4999, currency: "INR", status: "active", storageAllocatedGB: 200,
+    id: "sub_ana_1", userId: uid, planTier: "Yearly Plan", billingCycle: "yearly",
+    amount: 499, currency: "INR", status: "active", storageAllocatedGB: 15,
     startDate: daysAgo(90), nextBillingDate: daysAhead(275).slice(0, 10),
     autoRenew: true, paymentMethod: "UPI"
   });

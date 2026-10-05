@@ -3098,7 +3098,7 @@ app.get("/api/subscription/current", authMiddleware, (req: express.Request, res:
     amount: 0,
     currency: "INR",
     status: "active",
-    storageAllocatedGB: user.storageLimitGB || 15,
+    storageAllocatedGB: user.storageLimitGB || 1,
     startDate: user.createdAt,
     nextBillingDate: "Lifetime Free",
     autoRenew: false,
@@ -3130,8 +3130,8 @@ app.get("/api/subscription/current", authMiddleware, (req: express.Request, res:
     }
   });
 
-  const usedGB = Math.max(1.2, +(totalBytes / (1024 * 1024 * 1024)).toFixed(2));
-  const limitGB = user.storageLimitGB || activeSub.storageAllocatedGB || 15;
+  const usedGB = Math.max(0, +(totalBytes / (1024 * 1024 * 1024)).toFixed(2));
+  const limitGB = user.storageLimitGB || activeSub.storageAllocatedGB || 1;
 
   res.json({
     subscription: activeSub,

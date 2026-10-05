@@ -28,9 +28,13 @@ for (const [name, cmd, args] of [
   ["server-routes-check", "npx", ["tsx", "test/server-routes-check.ts"]],
   ["message-capsule-check", "npx", ["tsx", "test/message-capsule-check.ts"]],
   ["companion-tuning-check", "npx", ["tsx", "test/companion-tuning-check.ts"]],
+  ["companion-limit-check", "npx", ["tsx", "test/companion-limit-check.ts"]],
   ["design-tokens-check", "npx", ["tsx", "test/design-tokens-check.ts"]],
+  ["gemini-adapter-check", "npx", ["tsx", "test/gemini-adapter-check.ts"]],
   ["autobiography-check", "npx", ["tsx", "test/autobiography-check.ts"]],
+  ["db-backup-check", "npx", ["tsx", "test/db-backup-check.ts"]],
   ["language-check", "npx", ["tsx", "test/language-check.ts"]],
+  ["supabase-auth-check", "npx", ["tsx", "test/supabase-auth-check.ts"]],
   ["demo-accounts-check", "npx", ["tsx", "test/demo-accounts-check.ts"]],
 ]) {
   console.log(`\n=== ${name} ===`);

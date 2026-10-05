@@ -474,7 +474,7 @@ function BookView({ auto, bookTitle, bookSubtitle, lang, translating, langError,
           <h2 className="text-xl font-serif italic text-[#1E2521]">Your story is waiting to be told</h2>
           <p className="text-sm text-[#454A46] mt-2 max-w-md mx-auto leading-relaxed">
             {auto.sourceCount === 0
-              ? "Your autobiography grows from the memories you preserve. Add a few moments — a photograph, a place, a person — and your story will begin."
+              ? "Your MyBiography grows from the memories you preserve. Add a few moments — a photograph, a place, a person — and your story will begin."
               : "Your memories are ready to become your story."}
           </p>
           {auto.sourceCount === 0 && onNavigate && !guestMode && (

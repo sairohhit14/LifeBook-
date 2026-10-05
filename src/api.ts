@@ -433,7 +433,24 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify({ message, language })
     });
-    if (!res.ok) throw new Error("Failed to send message to AI companion");
+    if (!res.ok) {
+      let detail: any = null;
+      try { detail = await res.json(); } catch { /* non-JSON error */ }
+      if (res.status === 429 && detail?.code === "COMPANION_LIMIT_REACHED") {
+        const err: any = new Error(detail.error || "Monthly AI Companion limit reached");
+        err.code = detail.code;
+        err.usage = detail.usage;
+        throw err;
+      }
+      throw new Error("Failed to send message to AI companion");
+    }
+    return res.json();
+  },
+
+  /** Learned companion profile incl. this month's usage/remaining count. */
+  async getChatPreferences(): Promise<any> {
+    const res = await fetch(`${API_BASE}/api/chat/preferences`, { headers: getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch companion preferences");
     return res.json();
   },
 
@@ -534,40 +551,6 @@ export const api = {
     this.clearSession();
   },
 
-  async getEmailConfig(): Promise<any> {
-    const res = await fetch(`${API_BASE}/api/settings/email-config`, {
-      headers: getHeaders()
-    });
-    if (!res.ok) throw new Error("Failed to load email configurations");
-    return res.json();
-  },
-
-  async sendTestEmail(to: string): Promise<{ success: boolean; messageId?: string }> {
-    const res = await fetch(`${API_BASE}/api/settings/email-config/test`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify({ to })
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Test email failed to send");
-    }
-    return res.json();
-  },
-
-  async updateEmailConfig(config: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/api/settings/email-config`, {
-      method: "PUT",
-      headers: getHeaders(),
-      body: JSON.stringify(config)
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Failed to update email configurations");
-    }
-    return res.json();
-  },
-
   // Google Flow AI Video Generator
   async generateVideoScript(tonePreset?: string, customPrompt?: string): Promise<{
     title: string;
@@ -619,6 +602,36 @@ export const api = {
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.error || "Failed to upgrade subscription");
+    }
+    return res.json();
+  },
+
+  // Razorpay checkout: create the order server-side, then verify the payment
+  // signature server-side before the upgrade is applied.
+  async createSubscriptionOrder(planName: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/api/subscription/create-order`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ planName })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Failed to start checkout");
+    }
+    return res.json();
+  },
+
+  async verifySubscriptionPayment(payload: {
+    razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; planName: string;
+  }): Promise<any> {
+    const res = await fetch(`${API_BASE}/api/subscription/verify`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Payment verification failed");
     }
     return res.json();
   },

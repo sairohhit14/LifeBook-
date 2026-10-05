@@ -66,7 +66,7 @@ export default function BillingPage({ user, onUpgradeClick }: BillingPageProps) 
   const invoices: Invoice[] = billingData?.invoices || [];
   const payments: Payment[] = billingData?.payments || [];
   
-  const storageLimit = user.storageLimitGB || sub?.storageAllocatedGB || 15;
+  const storageLimit = user.storageLimitGB || sub?.storageAllocatedGB || 1;
   const storageUsed = user.storageUsedGB || 1.2;
   const remaining = Math.max(0, +(storageLimit - storageUsed).toFixed(1));
 

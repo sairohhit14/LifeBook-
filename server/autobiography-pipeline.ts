@@ -359,7 +359,7 @@ export function validateGeneratedChapters(
     if (paragraphs.length === 0) return { ok: false, reason: `chapter ${item.index} has no usable paragraphs` };
 
     const captions: Record<string, string> = {};
-    // Gemini's structured schema returns captions as an array of pairs;
+    // Structured schema returns captions as an array of pairs;
     // accept the object (Record) shape too.
     const rawCaptions = Array.isArray(item.captions)
       ? item.captions.filter((c: any) => c && typeof c === "object")
